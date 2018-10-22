@@ -15,7 +15,7 @@ def process_race(race_url, data_graph):
 	for result in results:
 		athlete = process_athlete_result(result, data_graph)
 		for surpasser in surpassers:
-			data_graph.add_edge(athlete, surpasser, 1)
+			athlete.lose(surpasser, data_graph)
 		surpassers.append(athlete)
 
 #processes a single match found by regular expression, adding data to graph.
@@ -24,19 +24,15 @@ def process_athlete_result(result_data, data_graph):
 	result_data = re.sub(pattern, 'None', result_data)
 	result = eval(result_data)  
 	a = Athlete.Athlete(result['FirstName'] + ' ' + result['LastName'], result['AthleteID'])
-	if a not in data_graph:
-		data_graph.add_node(a)
+	data_graph.add_node(a)
 	return a
 
 if __name__ == "__main__":
 	race_url = 'https://www.athletic.net/CrossCountry/meet/154540/results/644131'
-	g = nx.MultiDiGraph()
+	g = nx.DiGraph()
 	process_race(race_url, g)
 	process_race(race_url, g)
 	process_race(race_url, g)
-	"""for athlete in g:
-		print(g.out_degree(athlete, weight='weight'))
-		print('\n') """
 	a = Athlete.Athlete('asdf', 9126976)
 	b = Athlete.Athlete('ffsa', 12401545)
 	print(g[b][a])
