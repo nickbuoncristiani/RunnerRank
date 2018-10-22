@@ -1,6 +1,6 @@
 import numpy as np
 
-#Pass in eigenvals/vectors and receive corresponding rankings.
+#Pass in eige nvals/vectors and receive corresponding rankings.
 def get_rankings(eig_vals, eig_vectors):
 	eig_one_arr = list(map(basically_one, eig_vals))
 	assert True in eig_one_arr

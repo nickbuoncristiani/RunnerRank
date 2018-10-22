@@ -15,7 +15,7 @@ def process_race(race_url, data_graph):
 	for result in results:
 		athlete = process_athlete_result(result, data_graph)
 		for surpasser in surpassers:
-			athlete.lose(surpasser, data_graph)
+			athlete.lose(surpasser, 'date', data_graph)
 		surpassers.append(athlete)
 
 #processes a single match found by regular expression, adding data to graph.
@@ -28,11 +28,10 @@ def process_athlete_result(result_data, data_graph):
 	return a
 
 if __name__ == "__main__":
-	race_url = 'https://www.athletic.net/CrossCountry/meet/154540/results/644131'
+	race_url = 'https://www.athletic.net/CrossCountry/meet/117800/results/521489'
 	g = nx.DiGraph()
-	process_race(race_url, g)
-	process_race(race_url, g)
 	process_race(race_url, g)
 	a = Athlete.Athlete('asdf', 9126976)
 	b = Athlete.Athlete('ffsa', 12401545)
-	print(g[b][a])
+	print(g.adj.items())
+	#print(g[b][a])
