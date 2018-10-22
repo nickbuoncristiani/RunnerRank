@@ -1,46 +1,27 @@
-from bs4 import BeautifulSoup as soup
 from urllib.request import urlopen, Request
-import re, html5lib
+import re, Athlete
 
-#takes meet url and places all athletes into graph and updates athletes. Right now let's focus on men's races.
+#Uses raw re to extract race data from url.
+def process_race(race_url, data_graph):
+	req = Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})
+	with urlopen(req) as page:
+		race_info = str(page.read())
+	pattern = re.compile(r'{"Result":[^}]+}') 
 
-###!!!I did not realize that this page format does not include athlete ids. So this code is most likely useless!!!###
-def import_meet(url, data_graph_men, data_graph_women):
-	req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-	page = urlopen(req)
-	page = page.read()
-	page_soup = soup(page, 'html.parser')
-	
-	#getting mens' results
-	mens_results = page_soup.find('div', {'id' : 'gender_M'})
-	mens_races = mens_results.findAll('tbody', {'style' : 'cursor: pointer;'})
-	for race in mens_races:
-		curr_tag = race.find('tr')
-		curr_tag = curr_tag.nextSibling.nextSibling.nextSibling
-		while curr_tag:
-			if curr_tag.text != 'Provided by Athletic.net':
-				print(extract_athlete_data(curr_tag))
-			curr_tag = curr_tag.nextSibling
-	
-	#getting womens' results
-	womens_results = page_soup.find('div', {'id' : 'gender_F'})
-	womens_races = womens_results.findAll('tbody', {'style' : 'cursor: pointer;'})
-	for race in womens_races:
-		curr_tag = race.find('tr')
-		curr_tag = curr_tag.nextSibling.nextSibling.nextSibling
-		while curr_tag:
-			if curr_tag.text != 'Provided by Athletic.net':
-				print(extract_athlete_data(curr_tag))
-			curr_tag = curr_tag.nextSibling
-		
-#takes an athlete tag and returns (name, place)
-def extract_athlete_data(html_block):
-	data = html_block.find('td')
-	place = data.text
-	data = data.nextSibling.nextSibling
-	name = data.text
-	return place, name
+	results = pattern.findall(race_info)
 
-if __name__ == '__main__':
-	url = 'https://www.athletic.net/CrossCountry/Results/Meet.aspx?Meet=117561&show=all'
-	import_meet(url, 'a', 'b')
+	for result in results:
+		process_athlete_result(result, data_graph)
+
+#processes a single match found by regular expression, adding data to graph.
+def process_athlete_result(result_data, data_graph):
+	pattern = re.compile(r'(null|true|false)')
+	result_data = re.sub(pattern, 'None', result_data)
+	result = eval(result_data)
+	a = Athlete.Athlete(result['FirstName'] + ' ' + result['LastName'], result['AthleteID'])
+	#print(a)
+	#print('-----\n')
+
+if __name__ == "__main__":
+	race_url = 'https://www.athletic.net/CrossCountry/meet/154540/results/644131'
+	process_race(race_url, 'a')
