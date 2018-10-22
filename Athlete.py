@@ -9,12 +9,12 @@ class Athlete:
 	def add_rank(self, event, rank):
 		self.rank_map[event] = rank
 
-	def lose(self, other, graph):
+	def lose(self, other, date, graph):
 		self.losses += 1
 		if self in graph and other in graph.adj[self]:
-			graph[self][other]['weight'] += 1
-		else:			
-			graph.add_edge(self, other, weight = 1)
+			graph[self][other]['dates_of_losses'].append(date)
+		else:
+			graph.add_edge(self, other, dates_of_losses = [])
 
 	def __eq__(self, other):
 		return isinstance(other, Athlete) and self.id == other.id
