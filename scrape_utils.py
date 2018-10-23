@@ -1,9 +1,9 @@
 from urllib.request import urlopen, Request
 import re, Athlete
-import networkx as nx
+import Save
 
 #Uses raw re to extract race data from url.
-def process_race(race_url, data_graph):
+def process_race(race_url, save):
 	req = Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})
 	with urlopen(req) as page:
 		race_info = str(page.read())
@@ -13,25 +13,23 @@ def process_race(race_url, data_graph):
 
 	surpassers = []
 	for result in results:
-		athlete = process_athlete_result(result, data_graph)
+		a_ID = process_athlete_result(result, save)
 		for surpasser in surpassers:
-			athlete.lose(surpasser, 'date', data_graph)
-		surpassers.append(athlete)
+			save.athletes_by_id[a_ID].lose(surpasser, 'date', save)
+		surpassers.append(a_ID)
 
-#processes a single match found by regular expression, adding data to graph.
-def process_athlete_result(result_data, data_graph):
+#processes a single match found by regular expression, adding data to save
+def process_athlete_result(result_data, save):
 	pattern = re.compile(r'(null|true|false)')
 	result_data = re.sub(pattern, 'None', result_data)
 	result = eval(result_data)  
-	a = Athlete.Athlete(result['FirstName'] + ' ' + result['LastName'], result['AthleteID'])
-	data_graph.add_node(a)
-	return a
+	a_ID = result['AthleteID']
+	name = result['FirstName'] + ' ' + result['LastName']
+	save.add_athlete(a_ID, name)
+	return a_ID
 
 if __name__ == "__main__":
 	race_url = 'https://www.athletic.net/CrossCountry/meet/117800/results/521489'
-	g = nx.DiGraph()
-	process_race(race_url, g)
-	a = Athlete.Athlete('asdf', 9126976)
-	b = Athlete.Athlete('ffsa', 12401545)
-	print(g.adj.items())
-	#print(g[b][a])
+	s = Save.Save()
+	process_race(race_url, s)
+	print(s.athletes_by_id)
