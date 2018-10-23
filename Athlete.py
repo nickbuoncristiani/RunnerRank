@@ -5,16 +5,16 @@ class Athlete:
 		self.id = id
 		self.rank_map = {} #e.g {'xc' : 10, '1600m' : 1, ...}
 		self.losses = 0
+		self.wins = 0
 
 	def add_rank(self, event, rank):
 		self.rank_map[event] = rank
 
-	def lose(self, other_ID, date, save):
+	def lose(self):
 		self.losses += 1
-		if self.id in save.athletes_by_id and other_ID in save.athlete_web.adj[self.id]:
-			save.athlete_web[self.id][other_ID]['dates_of_losses'].append(date)
-		else:
-			save.athlete_web.add_edge(self.id, other_ID, dates_of_losses = [date])
+
+	def win(self):
+		self.wins += 1
 
 	def __eq__(self, other):
 		return isinstance(other, Athlete) and self.id == other.id

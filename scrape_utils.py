@@ -15,7 +15,7 @@ def process_race(race_url, save):
 	for result in results:
 		a_ID = process_athlete_result(result, save)
 		for surpasser in surpassers:
-			save.athletes_by_id[a_ID].lose(surpasser, 'date', save)
+			save.lose(a_ID, surpasser, 'date', save)
 		surpassers.append(a_ID)
 
 #processes a single match found by regular expression, adding data to save
@@ -30,6 +30,6 @@ def process_athlete_result(result_data, save):
 
 if __name__ == "__main__":
 	race_url = 'https://www.athletic.net/CrossCountry/meet/117800/results/521489'
-	s = Save.Save()
+	s = Save.Save('xc')
 	process_race(race_url, s)
 	print(s.athletes_by_id)
