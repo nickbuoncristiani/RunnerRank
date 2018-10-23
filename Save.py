@@ -24,7 +24,7 @@ class Save:
 	def lose(self, athlete1_ID, athlete2_ID, date, meet_name):
 		self[athlete1_ID].lose()
 		self[athlete2_ID].win()
-		self.set_edge(athlete1_ID, athlete2_ID, {'losses' : (meet_name, date)})
+		self.set_edge(athlete1_ID, athlete2_ID, date, meet_name)
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, *athlete_ids):
@@ -39,13 +39,11 @@ class Save:
 		return self[athlete_id].rank_map[event]
 
 	#data is a dictionary of data we want to add to edge.
-	def set_edge(self, athlete1_ID, athlete2_ID, datas):
+	def set_edge(self, athlete1_ID, athlete2_ID, date, meet_name):
 		if athlete1_ID in self and athlete2_ID in self.athlete_web.adj[athlete1_ID]:
-			for data in datas:
-				self.athlete_web[athlete1_ID][athlete2_ID][data].append(datas[data])
+			self.athlete_web[athlete1_ID][athlete2_ID]['losses'].append((meet_name, date))
 		else:
-			for data in datas:
-				self.athlete_web[athlete1_ID][athlete2_ID][data] = datas[data]
+			self.athlete_web.add_edge(athlete1_ID, athlete2_ID, losses = [(meet_name, date)])
 
 	def __getitem__(self, id):
 		return self.athletes_by_id[id]
