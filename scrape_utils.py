@@ -14,6 +14,8 @@ def process_race(race_url, save):
 	surpassers = []
 	for result in results:
 		a_ID = process_athlete_result(result, save)
+		if not(a_ID):
+			continue
 		for surpasser in surpassers:
 			save.lose(a_ID, surpasser, 'date', save)
 		surpassers.append(a_ID)
@@ -22,10 +24,15 @@ def process_race(race_url, save):
 def process_athlete_result(result_data, save):
 	pattern = re.compile(r'(null|true|false)')
 	result_data = re.sub(pattern, 'None', result_data)
-	result = eval(result_data)  
-	a_ID = result['AthleteID']
-	name = result['FirstName'] + ' ' + result['LastName']
-	save.add_athlete(a_ID, name)
+	result = eval(result_data)
+	try: 
+		a_ID = result['AthleteID']
+		name = result['FirstName'] + ' ' + result['LastName']
+		save.add_athlete(a_ID, name)
+	except TypeError:
+		return 0
+	except KeyError:
+		return 0
 	return a_ID
 
 if __name__ == "__main__":
