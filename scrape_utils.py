@@ -12,11 +12,15 @@ def process_race(race_url, save):
 
 	results = pattern.findall(race_info)
 
-	date_pattern = re.compile(r'"MeetDate":\"\d\d\d\d.\d\d.\d\d') 
-	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later 
-	numeric_date = re.split(':', race_date)[1] 
+	date_pattern = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
+	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
+	str_date = re.split(':', race_date)[1]
 
-	date_object = process_date(numeric_date)
+	date_object = process_date(str_date)
+
+	#Struggling a bit w regex expression
+	name_pattern = re.compile(r'"OwnerID":.+:(".+")')
+	meet_name = name_pattern.findalll(race_info)
 
 	surpassers = []
 	for result in results:
@@ -24,7 +28,7 @@ def process_race(race_url, save):
 		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
 			continue
 		for surpasser in surpassers:
-			save.lose(a_ID, surpasser, date_object, 'meetname')
+			save.lose(a_ID, surpasser, date_object, meet_name)
 		surpassers.append(a_ID)
 
 #processes a single match found by regular expression, adding data to save
@@ -46,8 +50,9 @@ def process_date(date_string):
 	date_list.pop(0)
 	date_ints = list(map(int, date_list))
 	year, month, day = date_ints
-	race_date = date.datetime(year, month, day)
+	race_date = Date.datetime(year, month, day)
 	return race_date
+
 
 if __name__ == "__main__":
 	race_url = 'https://www.athletic.net/CrossCountry/meet/117800/results/521489'
