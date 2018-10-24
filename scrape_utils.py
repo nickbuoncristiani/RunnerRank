@@ -18,13 +18,14 @@ def process_race(race_url, save):
 
 	date_object = process_date(numeric_date)
 
+
 	surpassers = []
 	for result in results:
 		a_ID = process_athlete_result(result, save)
 		if not(a_ID):
 			continue
 		for surpasser in surpassers:
-			save.lose(a_ID, surpasser, date_object, save)
+			save.lose(a_ID, surpasser, date_object, 'name')
 		surpassers.append(a_ID)
 
 #processes a single match found by regular expression, adding data to save
@@ -42,12 +43,13 @@ def process_athlete_result(result_data, save):
 		return 0
 	return a_ID
 
-#takes date string and name string and returns a tuple containing datetime object and name string
+#takes date string and returns appropriate datetime object
 def process_date(date_string):
-	date = re.split(r'\D', date_string)
-	date.pop(0)
-	year, month, day = date
-	race_date = date.datetime(year, month, date)
+	date_list = re.split(r'\D', date_string)
+	date_list.pop(0)
+	date_ints = list(map(int, date_list))
+	year, month, day = date_ints
+	race_date = date.datetime(year, month, day)
 	return race_date
 
 if __name__ == "__main__":
