@@ -12,7 +12,7 @@ def process_race(race_url, save):
 
 	results = pattern.findall(race_info)
 
-	date_pattern = re.compile(r'"MeetDate":\"\d\d\d\d.\d\d.\d\d')
+	date_pattern = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
 	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
 	numeric_date = re.split(':', race_date)[1]
 
