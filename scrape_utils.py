@@ -12,16 +12,16 @@ def process_race(race_url, save):
 
 	results = pattern.findall(race_info)
 
-	date_pattern = re.compile(r'"MeetDate":\"\d\d\d\d.\d\d.\d\d')
-	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
-	numeric_date = re.split(':', race_date)[1]
+	date_pattern = re.compile(r'"MeetDate":\"\d\d\d\d.\d\d.\d\d') 
+	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later 
+	numeric_date = re.split(':', race_date)[1] 
 
 	date_object = process_date(numeric_date)
 
 	surpassers = []
 	for result in results:
 		a_ID = process_athlete_result(result, save)
-		if not(a_ID):
+		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
 			continue
 		for surpasser in surpassers:
 			save.lose(a_ID, surpasser, date_object, 'meetname')
@@ -37,8 +37,6 @@ def process_athlete_result(result_data, save):
 		name = result['FirstName'] + ' ' + result['LastName']
 		save.add_athlete(a_ID, name)
 	except TypeError:
-		return 0
-	except KeyError:
 		return 0
 	return a_ID
 
