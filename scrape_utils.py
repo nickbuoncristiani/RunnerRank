@@ -1,7 +1,7 @@
 from urllib.request import urlopen, Request
 import re, Athlete
 import Save
-import datetime as date
+import datetime as Date
 
 #Uses raw re to extract race data from url.
 def process_race(race_url, save):
@@ -56,4 +56,3 @@ if __name__ == "__main__":
 	race_url = 'https://www.athletic.net/CrossCountry/meet/117800/results/521489'
 	s = Save.Save('xc')
 	process_race(race_url, s)
-	#print(s.athletes_by_id)

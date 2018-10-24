@@ -25,9 +25,9 @@ def import_all(save, *athlete_ids, xc = True):
 		#If we are considering xc we don't care too much about specific events. 
 		if xc:
 			events = ['xc' for event in events]
-			base_url = 'https://www.athletic.net/CrossCountry/'
+			base_url_2 = 'https://www.athletic.net/CrossCountry/'
 		else:
-			base_url = 'https://www.athletic.net/TrackAndField/'
+			base_url_2 = 'https://www.athletic.net/TrackAndField/'
 		
 		full_results = zip(events, event_results)
 		race_urls = []
@@ -37,7 +37,7 @@ def import_all(save, *athlete_ids, xc = True):
 			trs = result[1].findAll('tr')
 			for tr in trs:
 				td = tr.findAll('td')[3]
-				race_urls.append(base_url + td.find('a')['href'])
+				race_urls.append(base_url_2 + td.find('a')['href'])
 
 		for race in race_urls:
 			scrape_utils.process_race(race, save)
@@ -45,5 +45,5 @@ def import_all(save, *athlete_ids, xc = True):
 
 if __name__ == "__main__":
 	s = Save.Save('xc')
-	import_all(s, 5760931)
+	import_all(s, 12421025)
 	print(len(s.athletes_by_id))
