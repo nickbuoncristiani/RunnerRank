@@ -24,7 +24,7 @@ def process_race(race_url, save):
 		if not(a_ID):
 			continue
 		for surpasser in surpassers:
-			save.lose(a_ID, surpasser, date_object, save)
+			save.lose(a_ID, surpasser, date_object, 'meetname')
 		surpassers.append(a_ID)
 
 #processes a single match found by regular expression, adding data to save
