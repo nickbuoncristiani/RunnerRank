@@ -1,4 +1,4 @@
-import scrape_utils, Athlete, matrix_utils
+import scrape_utils, Athlete, matrix_utils, pickle, importer
 import networkx as nx
 from pygtrie import StringTrie
 
@@ -27,12 +27,24 @@ class Save:
 		self.set_edge(athlete1_ID, athlete2_ID, date, meet_name)
 
 	#takes athletes as starting points and dives into athletic.net.
-	def import_data(self, *athlete_ids):
-		raise NotImplementedError()
+	def import_data(self, *athlete_ids, filename = 'my_save.bin'):
+		if 'xc' in self.events_considering:
+			importer.import_all(self, *athlete_ids)
+		else:
+			importer.import_all(self, *athlete_ids, *self.events_considering)
+		with open(filename, 'wb') as file:
+			pickle.dump(self, file)
 
 	#updates state to match .bin file
-	def load(self, file):
-		raise NotImplementedError()
+	def load(self, filename = 'my_save.bin'):
+		with open(filename, 'rb') as file:
+			save = pickle.load(file)
+		self.athlete_web = save.athlete_web
+		self.athletes_by_name = save.athletes_by_name
+		self.athletes_by_id = save.athletes_by_id
+		self.athlete_indices = save.athlete_indices
+		self.race_history = save.race_history
+		self.events_considering = save.events_considering
 
 	#returns athletes rank in given event, given their unique id. 
 	def get_ranking(self, athlete_id, event = 'xc'):
@@ -50,5 +62,11 @@ class Save:
 
 	def __contains__(self, id):
 		return id in self.athletes_by_id
+
+if __name__ == "__main__":
+	s = Save('xc')
+	s.import_data(12421025)
+	b = Save('xc')
+	b.load()
 
 
