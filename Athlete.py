@@ -6,6 +6,7 @@ class Athlete:
 		self.rank_map = {} #e.g {'xc' : 10, '1600m' : 1, ...}
 		self.losses = 0
 		self.wins = 0
+		self.loss_list = []
 
 	def add_rank(self, event, rank):
 		self.rank_map[event] = rank
