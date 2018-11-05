@@ -1,6 +1,6 @@
 class Athlete:
 
-	def __init__(self, name, id):
+	def __init__(self, id, name):
 		self.name = name #e.g Cooper Teare
 		self.id = id
 		self.rank_map = {} #e.g {'xc' : 10, '1600m' : 1, ...}

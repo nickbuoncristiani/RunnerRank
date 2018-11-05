@@ -22,8 +22,8 @@ def import_all(save, *athlete_ids, xc = True):
 		events = recent_season.findAll('h5')
 		event_results = recent_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
 		
-		#If we are considering xc we don't care too much about specific events. 
 		if xc:
+			#If we are considering xc we don't care too much about specific events. 
 			events = ['xc' for event in events]
 			base_url_2 = 'https://www.athletic.net/CrossCountry/'
 		else:
@@ -40,6 +40,9 @@ def import_all(save, *athlete_ids, xc = True):
 				race_urls.append(base_url_2 + td.find('a')['href'])
 
 		for race in race_urls:
+			if race in save.race_history:
+				continue
+			save.race_history.add(race)
 			scrape_utils.process_race(race, save)
 
 

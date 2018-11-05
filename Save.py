@@ -5,7 +5,7 @@ from pygtrie import StringTrie
 class Save:
 
 	def __init__(self, *events_considering):
-		self.athlete_web = nx.DiGraph() #contains athlete objects as nodes, might make more sense just to have athlete id's.
+		self.athlete_web = nx.DiGraph() #contains athlete ids as nodes. edges contain matchup data.
 		self.athletes_by_name = StringTrie() # maps string to athlete object
 		self.athletes_by_id = {} # maps id to athlete object. 
 		self.athlete_indices = [] #So we can associate each athlete with a coordinate in the resultant vector.
@@ -38,13 +38,13 @@ class Save:
 	#updates state to match .bin file
 	def load(self, filename = 'my_save.bin'):
 		with open(filename, 'rb') as file:
-			save = pickle.load(file)
-		self.athlete_web = save.athlete_web
-		self.athletes_by_name = save.athletes_by_name
-		self.athletes_by_id = save.athletes_by_id
-		self.athlete_indices = save.athlete_indices
-		self.race_history = save.race_history
-		self.events_considering = save.events_considering
+			s = pickle.load(file)
+		self.athlete_web = s.athlete_web
+		self.athletes_by_name = s.athletes_by_name
+		self.athletes_by_id = s.athletes_by_id
+		self.athlete_indices = s.athlete_indices
+		self.race_history = s.race_history
+		self.events_considering = s.events_considering
 
 	#returns athletes rank in given event, given their unique id. 
 	def get_ranking(self, athlete_id, event = 'xc'):
@@ -57,16 +57,38 @@ class Save:
 		else:
 			self.athlete_web.add_edge(athlete1_ID, athlete2_ID, losses = [(meet_name, date)])
 
-	def __getitem__(self, id):
-		return self.athletes_by_id[id]
+	def get_athlete_by_index(self, index):
+		return self.athlete_indices[index]
 
-	def __contains__(self, id):
-		return id in self.athletes_by_id
+	#can subscript Save object using either athlete or athlete id for the same result.
+	def __getitem__(self, request):
+		if type(request) == int:
+			return self.athletes_by_id[request]
+		return self.athletes_by_name[request]
+
+	def __contains__(self, request):
+		if type(request) == int:
+			return request in self.athletes_by_id
+		return request in self.athletes_by_name
 
 if __name__ == "__main__":
-	s = Save('xc')
-	s.import_data(12421025)
+	#s = Save('xc')
+	#s.import_data(8710974, filename = 'high_school.bin')
+	#print(s.race_history)
 	b = Save('xc')
-	b.load()
+	b.load(filename = 'high_school.bin')
+	print(b.race_history)
+	c = matrix_utils.get_matrix_from_save(b)
+	import numpy as np
+	vals, vects = np.linalg.eig(c)
+	rankings = matrix_utils.get_rankings(vals, vects)
+	final_rankings = []
+	for i in range(len(rankings)):
+		final_rankings.append((b[b.athlete_indices[i]].name, rankings[i]))
+	final_rankings.sort(key = lambda x: -1 * x[1])
+
+	for a in enumerate(final_rankings):
+		print(a)
+
 
 
