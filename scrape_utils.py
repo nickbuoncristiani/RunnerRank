@@ -12,12 +12,13 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 		with urlopen(req) as page:
 			race_info = str(page.read())
 	except:
-		print("freaked out with race: " + race_url)
-		return
+		print("Error handling race: " + race_url)
+		time.sleep(120)
+		process_race(race_url, save, queue, new_athletes_to_add)
 	
-	pattern = re.compile(r'{"Result":[^}]+}')
+	result_pattern = re.compile(r'{"Result":[^}]+}')
 
-	results = re.findall(pattern, race_info)
+	results = re.findall(result_pattern, race_info)
 
 	date_pattern = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
 	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
@@ -30,10 +31,10 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 	#meet_name = re.findall(name_pattern, race_info)
 	
 	surpassers = []
-	count = 0
+	added_to_queue = 0 #How many athletes we've added to the queue so far.
 	for result in results:
 		a_ID = process_athlete_result(result, save)
-		if count < new_athletes_to_add:
+		if added_to_queue < new_athletes_to_add:
 			queue.append(a_ID)
 			print('adding ' + save[a_ID].name + ' to queue.')
 		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
@@ -41,7 +42,7 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 		for surpasser in surpassers:
 			save.lose(a_ID, surpasser, date_object, 'MEETNAME')
 		surpassers.append(a_ID)
-		count += 1
+		added_to_queue += 1
 
 #processes a single match found by regular expression, adding data to save
 def process_athlete_result(result_data, save):

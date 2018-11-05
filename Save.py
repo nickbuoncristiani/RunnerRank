@@ -8,9 +8,9 @@ class Save:
 		self.athlete_web = nx.DiGraph() #contains athlete ids as nodes. edges contain matchup data.
 		self.athletes_by_name = StringTrie() # maps string to athlete object
 		self.athletes_by_id = {} # maps id to athlete object. 
-		self.athlete_indices = [] #So we can associate each athlete with a coordinate in the resultant vector.
-		self.race_history = set() # Contains race url's
-		self.athletes_considered = set()
+		self.athletes_by_index = [] #So we can associate each athlete with a coordinate in the resultant vector.
+		self.race_history = set() #Contains race url's
+		self.athletes_considered = set() #Contains id's of nodes in scraping process.
 		self.events_considering = events_considering
 
 	def add_athlete(self, a_ID, name):
@@ -19,7 +19,7 @@ class Save:
 		new_athlete = Athlete.Athlete(a_ID, name)
 		self.athletes_by_id[a_ID] = new_athlete
 		self.athletes_by_name[name] = new_athlete
-		self.athlete_indices.append(a_ID)
+		self.athletes_by_index.append(a_ID)
 		self.athlete_web.add_node(a_ID)
 
 	def lose(self, athlete1_ID, athlete2_ID, date, meet_name):
@@ -43,7 +43,7 @@ class Save:
 		self.athlete_web = s.athlete_web
 		self.athletes_by_name = s.athletes_by_name
 		self.athletes_by_id = s.athletes_by_id
-		self.athlete_indices = s.athlete_indices
+		self.athletes_by_index = s.athletes_by_index
 		self.race_history = s.race_history
 		self.events_considering = s.events_considering
 		self.athletes_considered = s.athletes_considered
@@ -59,8 +59,9 @@ class Save:
 		else:
 			self.athlete_web.add_edge(athlete1_ID, athlete2_ID, losses = [(meet_name, date)])
 
-	def get_athlete_by_index(self, index):
-		return self.athlete_indices[index]
+	#We also assign an index to individual athletes so we can reclaim them from a vector/matrix.
+	def athlete_at_index(self, index):
+		return self.athletes_by_index[index]
 
 	#can subscript Save object using either athlete or athlete id for the same result.
 	def __getitem__(self, request):
@@ -73,20 +74,21 @@ class Save:
 			return request in self.athletes_by_id
 		return request in self.athletes_by_name
 
+	#Returns number of athletes in Save.
+	def __len__(self):
+		return len(athletes_by_index)
+
+	def __repr__(self):
+		s1 = 'This save contains ' + len(self) + ' athles.'
+		s2 = 'Top five runners are: '
+		return s1 + s2
+
+
 if __name__ == "__main__":
 	#s = Save('xc')
 	#s.import_data(8710974, filename = 'high_school.bin')
 	#print(s.race_history)
-	b = Save('xc')
-	b.load(filename = 'high_school.bin')
-	c = matrix_utils.get_matrix_from_save(b)
-	rankings = matrix_utils.get_rankings(c, accuracy = 1)
-	final_rankings = []
-	for i in range(len(rankings)):
-		final_rankings.append((b[b.athlete_indices[i]].name, rankings[i]))
-	final_rankings.sort(key = lambda x: -1 * x[1])
-	for a in enumerate(final_rankings):
-		print(a)
+	
 	
 
 
