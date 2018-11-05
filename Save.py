@@ -10,6 +10,7 @@ class Save:
 		self.athletes_by_id = {} # maps id to athlete object. 
 		self.athlete_indices = [] #So we can associate each athlete with a coordinate in the resultant vector.
 		self.race_history = set() # Contains race url's
+		self.athletes_considered = set()
 		self.events_considering = events_considering
 
 	def add_athlete(self, a_ID, name):
@@ -45,6 +46,7 @@ class Save:
 		self.athlete_indices = s.athlete_indices
 		self.race_history = s.race_history
 		self.events_considering = s.events_considering
+		self.athletes_considered = s.athletes_considered
 
 	#returns athletes rank in given event, given their unique id. 
 	def get_ranking(self, athlete_id, event = 'xc'):
@@ -77,18 +79,14 @@ if __name__ == "__main__":
 	#print(s.race_history)
 	b = Save('xc')
 	b.load(filename = 'high_school.bin')
-	print(b.race_history)
 	c = matrix_utils.get_matrix_from_save(b)
-	import numpy as np
-	vals, vects = np.linalg.eig(c)
-	rankings = matrix_utils.get_rankings(vals, vects)
+	rankings = matrix_utils.get_rankings(c, accuracy = 1)
 	final_rankings = []
 	for i in range(len(rankings)):
 		final_rankings.append((b[b.athlete_indices[i]].name, rankings[i]))
 	final_rankings.sort(key = lambda x: -1 * x[1])
-
 	for a in enumerate(final_rankings):
 		print(a)
-
+	
 
 

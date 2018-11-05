@@ -1,13 +1,19 @@
 from urllib.request import urlopen, Request
-import re, Athlete
+import re, Athlete, time
 import Save
 import datetime as Date
 
 #Uses raw re to extract race data from url.
-def process_race(race_url, save):
-	req = Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})
-	with urlopen(req) as page:
-		race_info = str(page.read())
+def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
+	print('working on race: ' + race_url)
+	time.sleep(5)
+	try:
+		req = Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})
+		with urlopen(req) as page:
+			race_info = str(page.read())
+	except:
+		print("freaked out with race: " + race_url)
+		return
 	
 	pattern = re.compile(r'{"Result":[^}]+}')
 
@@ -22,15 +28,20 @@ def process_race(race_url, save):
 	#Struggling a bit w regex expression
 	#name_pattern = re.compile(r'"OwnerID":.+:(".+")')
 	#meet_name = re.findall(name_pattern, race_info)
-
+	
 	surpassers = []
+	count = 0
 	for result in results:
 		a_ID = process_athlete_result(result, save)
+		if count < new_athletes_to_add:
+			queue.append(a_ID)
+			print('adding ' + save[a_ID].name + ' to queue.')
 		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
 			continue
 		for surpasser in surpassers:
 			save.lose(a_ID, surpasser, date_object, 'MEETNAME')
 		surpassers.append(a_ID)
+		count += 1
 
 #processes a single match found by regular expression, adding data to save
 def process_athlete_result(result_data, save):

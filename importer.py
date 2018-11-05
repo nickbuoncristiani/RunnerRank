@@ -1,4 +1,4 @@
-import Save, scrape_utils
+import Save, scrape_utils, time
 from urllib.request import urlopen, Request
 from collections import deque
 from bs4 import BeautifulSoup as soup
@@ -11,13 +11,23 @@ def import_all(save, *athlete_ids, xc = True):
 	else:
 		base_url ='https://www.athletic.net/TrackAndField/Athlete.aspx?AID='
 	
-	while queue:
+	while len(queue) < 50 and queue:
 		curr_id = queue.popleft()
+		if curr_id in save.athletes_considered:
+			continue
 		page_url = base_url + str(curr_id)
-		req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
-		with urlopen(req) as page:
-			athlete_history = soup(page.read(), 'html.parser')
-		
+		save.athletes_considered.add(curr_id)
+
+		print('working on athlete: ' + str(curr_id))
+		time.sleep(1)
+		try:
+			req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
+			with urlopen(req) as page:
+				athlete_history = soup(page.read(), 'html.parser')
+		except:
+			print('freaked out with athlete: ' + str(curr_id))
+			continue
+
 		recent_season = athlete_history.find('div', {'class' : 'card-block px-2 pt-2 pb-0 collapse in'})
 		events = recent_season.findAll('h5')
 		event_results = recent_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
@@ -43,7 +53,7 @@ def import_all(save, *athlete_ids, xc = True):
 			if race in save.race_history:
 				continue
 			save.race_history.add(race)
-			scrape_utils.process_race(race, save)
+			scrape_utils.process_race(race, save, queue=queue)
 
 
 if __name__ == "__main__":
