@@ -1,22 +1,18 @@
 import numpy as np
+import time
 
-#Pass in matrix and get list of rankings. Will iterate 'precision' number of times or until the rankings don't budge.
-def get_rankings(matrix, precision = 10):
+#Pass in matrix and get list of rankings.
+def get_rankings(matrix, precision = 1000):
 	N = len(matrix)
-	current_rankings = [1 for athlete in matrix]
-	for a in range(accuracy):
-		in_progress = current_rankings[:]
+	current_scores = np.array([1 for i in range(N)])
+	for a in range(precision):
+		in_progress = []
 		for i in range(N):
-			new_rank = 0
-			for j in range(N):
-				new_rank += current_rankings[j] * matrix[i][j]
-			in_progress[i] = new_rank
-		#If our rankings don't change after an iteration then we're done.
-		if current_rankings == in_progress:
-			return current_rankings
-		else:
-			current_rankings = in_progress
-	return current_rankings
+			new_rank = np.dot(current_scores, matrix[i])
+			in_progress.append(new_rank)
+		new_scores = np.array(in_progress)
+		current_scores = new_scores
+	return current_scores
 
 def get_matrix_from_save(save):
 	web = save.athlete_web

@@ -48,12 +48,12 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 def process_athlete_result(result_data, save):
 	pattern = re.compile(r'(null|true|false)')
 	result_data = re.sub(pattern, 'None', result_data)
-	result = eval(result_data)
 	try:
+		result = eval(result_data)
 		a_ID = result['AthleteID']
 		name = result['FirstName'] + ' ' + result['LastName']
 		save.add_athlete(a_ID, name)
-	except TypeError:
+	except:
 		return 0
 	return a_ID
 
