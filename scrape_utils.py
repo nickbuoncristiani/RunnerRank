@@ -20,6 +20,7 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 
 	results = re.findall(result_pattern, race_info)
 
+	"""
 	date_pattern = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
 	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
 	str_date = re.split(':', race_date)[1]
@@ -27,8 +28,9 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 	date_object = process_date(str_date)
 
 	#Struggling a bit w regex expression
-	#name_pattern = re.compile(r'"OwnerID":.+:(".+")')
-	#meet_name = re.findall(name_pattern, race_info)
+	name_pattern = re.compile(r'"OwnerID":.+:(".+")')
+	meet_name = re.findall(name_pattern, race_info)
+	"""
 	
 	surpassers = []
 	added_to_queue = 0 #How many athletes we've added to the queue so far.
@@ -40,7 +42,7 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
 			continue
 		for surpasser in surpassers:
-			save.lose(a_ID, surpasser, date_object, 'MEETNAME')
+			save.lose(surpasser, a_ID)
 		surpassers.append(a_ID)
 		added_to_queue += 1
 
