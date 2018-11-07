@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 
+saves = {}
+
 root = tk.Tk()
-saves = []
 
 #gui functions
 def placeholder():
