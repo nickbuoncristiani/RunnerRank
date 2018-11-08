@@ -56,9 +56,12 @@ class Save:
 	def update_rankings(self):
 		system = nx.to_numpy_array(self.athlete_web)
 		rankings_by_index = matrix_utils.get_rankings(system)
+		t1 = time.clock()
 		score_pairs = [(self.athlete_at_index(pair[0]), pair[1]) for pair in enumerate(rankings_by_index)] 
 		score_pairs.sort(key = lambda x: -1 * x[1])
 		self.rankings = list(map(lambda x: x[0], score_pairs))
+		t2 = time.clock()
+		print('took ' + str(t2 - t1) + ' seconds.')
 
 	#We also assign an index to individual athletes so we can reclaim them from a vector/matrix.
 	def athlete_at_index(self, index):
@@ -86,8 +89,8 @@ class Save:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	#s = Save('xc')
-	#s.import_data(8693591, num_races_to_add = 15, filename = 'high_school2.bin')
+	s = Save('xc')
+	s.import_data(8693591, num_races_to_add = 200, filename = 'high_school2.bin')
 	b = Save('xc')
 	b.load('high_school2.bin')
 	b.update_rankings()
