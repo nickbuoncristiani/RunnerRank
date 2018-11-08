@@ -7,7 +7,6 @@ def get_rankings(matrix, precision = 100):
 	matrix = np.linalg.matrix_power(matrix, precision)
 	return np.matmul(matrix, current_scores)
 
-
 #Prints sum of individual columns. Should be all close to one.
 def test_columns(matrix):
 	for i in range(len(matrix)):

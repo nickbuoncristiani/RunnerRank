@@ -53,15 +53,14 @@ class Save:
 		self.athletes_considered = s.athletes_considered
 		self.rankings = s.rankings
 
-	def update_rankings(self):
+	def update_rankings(self, filename = 'my_save.bin'):
 		system = nx.to_numpy_array(self.athlete_web)
 		rankings_by_index = matrix_utils.get_rankings(system)
-		t1 = time.clock()
 		score_pairs = [(self.athlete_at_index(pair[0]), pair[1]) for pair in enumerate(rankings_by_index)] 
 		score_pairs.sort(key = lambda x: -1 * x[1])
 		self.rankings = list(map(lambda x: x[0], score_pairs))
-		t2 = time.clock()
-		print('took ' + str(t2 - t1) + ' seconds.')
+		with open(filename, 'wb') as file:
+			pickle.dump(self, file)
 
 	#We also assign an index to individual athletes so we can reclaim them from a vector/matrix.
 	def athlete_at_index(self, index):
@@ -85,14 +84,14 @@ class Save:
 		return 'Save object containing ' + str(len(self)) + ' athletes.'
 
 	def print_rankings(self):
-		for place, athlete in enumerate(self.rankings):
+		for place, athlete in list(enumerate(self.rankings))[:100][::-1]:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	s = Save('xc')
-	s.import_data(8693591, num_races_to_add = 200, filename = 'high_school2.bin')
+	#s = Save('xc')
+	#s.import_data(8693591, num_races_to_add = 200, filename = 'high_school2.bin')
 	b = Save('xc')
 	b.load('high_school2.bin')
-	b.update_rankings()
+	#b.update_rankings('high_school2.bin')
 	b.print_rankings()
 
