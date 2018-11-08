@@ -20,7 +20,7 @@ def search_for_races(save, *athlete_ids, num_races_to_add = 50, event = 'xc'):
 		if curr_id in save.athletes_considered:
 			continue
 		page_url = base_url + str(curr_id)
-		save.athletes_considered.add(curr_id)
+		save.consider_athlete(curr_id)
 
 		print('Working on athlete with id: ' + str(curr_id))
 		time.sleep(1)
@@ -59,7 +59,7 @@ def search_for_races(save, *athlete_ids, num_races_to_add = 50, event = 'xc'):
 				continue
 			else:
 				races_added += 1
-				save.race_history.add(race)
+				save.add_race(race)
 				scrape_utils.process_race(race, save, queue=queue)
 
 if __name__ == "__main__":

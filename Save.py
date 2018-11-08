@@ -5,15 +5,25 @@ from pygtrie import StringTrie
 
 class Save:
 
-	def __init__(self, event):
-		self.athlete_web = nx.DiGraph() #contains athlete ids as nodes. edges contain matchup data.
-		self.athletes_by_name = StringTrie() # maps string to athlete object
-		self.athletes_by_id = {} # maps id to athlete object. 
-		self.athletes_by_index = [] #So we can associate each athlete with a coordinate in the resultant vector.
-		self.race_history = set() #Contains race url's
-		self.athletes_considered = set() #Contains id's of nodes in scraping process.
+	def __init__(self, event = 'xc'):
+		self.athlete_web = nx.DiGraph() 
+		self.athletes_by_name = StringTrie() 
+		self.athletes_by_id = {} 
+		self.athletes_by_index = [] 
+		self.race_history = set() 
+		self.athletes_considered = set() 
 		self.event = event
-		self.rankings = [] #List of athletes in decreasing order of rank.
+		self.rankings = []
+
+	#Returns new Save from source file. 
+	def load(self, filename = 'my_save.bin'):
+		with open(filename, 'rb') as file:
+			s = pickle.load(file)
+		return s
+
+	def save(self, filename = 'my_save.bin'):
+		with open(filename, 'wb') as file:
+			pickle.dump(self, file)
 
 	def add_athlete(self, a_ID, name):
 		if a_ID in self.athletes_by_id:
@@ -23,6 +33,12 @@ class Save:
 		self.athletes_by_name[name] = new_athlete
 		self.athletes_by_index.append(a_ID)
 		self.athlete_web.add_node(a_ID)
+
+	def consider_athlete(self, a_ID):
+		self.athletes_considered.add(a_ID)
+
+	def add_race(self, race_url):
+		self.race_history.add(race_url)
 
 	def lose(self, won_id, lost_id):
 		self[won_id].win()
@@ -37,21 +53,7 @@ class Save:
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, *athlete_ids, num_races_to_add = 20, filename = 'my_save.bin'):
 		importer.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
-		with open(filename, 'wb') as file:
-			pickle.dump(self, file)
-
-	#updates state to match .bin file
-	def load(self, filename = 'my_save.bin'):
-		with open(filename, 'rb') as file:
-			s = pickle.load(file)
-		self.athlete_web = s.athlete_web
-		self.athletes_by_name = s.athletes_by_name
-		self.athletes_by_id = s.athletes_by_id
-		self.athletes_by_index = s.athletes_by_index
-		self.race_history = s.race_history
-		self.event = s.event
-		self.athletes_considered = s.athletes_considered
-		self.rankings = s.rankings
+		self.save(filename)
 
 	def update_rankings(self, filename = 'my_save.bin'):
 		system = nx.to_numpy_array(self.athlete_web)
@@ -59,9 +61,8 @@ class Save:
 		score_pairs = [(self.athlete_at_index(pair[0]), pair[1]) for pair in enumerate(rankings_by_index)] 
 		score_pairs.sort(key = lambda x: -1 * x[1])
 		self.rankings = list(map(lambda x: x[0], score_pairs))
-		with open(filename, 'wb') as file:
-			pickle.dump(self, file)
-
+		self.save(filename)
+	
 	#We also assign an index to individual athletes so we can reclaim them from a vector/matrix.
 	def athlete_at_index(self, index):
 		return self.athletes_by_index[index]
@@ -88,10 +89,9 @@ class Save:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	#s = Save('xc')
-	#s.import_data(8693591, num_races_to_add = 200, filename = 'high_school2.bin')
-	b = Save('xc')
-	b.load('high_school2.bin')
-	#b.update_rankings('high_school2.bin')
-	b.print_rankings()
+	s = Save('xc')
+	s.import_data(8693591, num_races_to_add = 1)
+	#b = load('high_school2.bin')
+	s.update_rankings()
+	s.print_rankings()
 
