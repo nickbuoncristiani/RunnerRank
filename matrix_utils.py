@@ -1,11 +1,11 @@
 import numpy as np
-import time
 
 #Pass in matrix and get list of rankings.
 def get_rankings(matrix, precision = 100):
 	current_scores = np.full(len(matrix), 1)
-	matrix = np.linalg.matrix_power(matrix, precision)
-	return np.matmul(matrix, current_scores)
+	for p in range(precision):
+		current_scores = np.matmul(matrix, current_scores)
+	return current_scores
 
 #Prints sum of individual columns. Should be all close to one.
 def test_columns(matrix):

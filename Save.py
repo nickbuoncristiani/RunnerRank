@@ -2,6 +2,7 @@ import scrape_utils, Athlete, matrix_utils, pickle, importer, time
 import numpy as np
 import networkx as nx
 from pygtrie import StringTrie
+from math import ceil
 
 class Save:
 
@@ -16,7 +17,7 @@ class Save:
 		self.rankings = []
 
 	#Returns new Save from source file. 
-	def load(self, filename = 'my_save.bin'):
+	def load(filename = 'my_save.bin'):
 		with open(filename, 'rb') as file:
 			s = pickle.load(file)
 		return s
@@ -25,10 +26,12 @@ class Save:
 		with open(filename, 'wb') as file:
 			pickle.dump(self, file)
 
-	def add_athlete(self, a_ID, name):
-		if a_ID in self.athletes_by_id:
+	def update_athlete(self, a_ID, name, meet_name, time):
+		if a_ID in self:
+			self[a_ID].add_result(meet_name, time)
 			return 
 		new_athlete = Athlete.Athlete(a_ID, name)
+		new_athlete.add_result(meet_name, time)
 		self.athletes_by_id[a_ID] = new_athlete
 		self.athletes_by_name[name] = new_athlete
 		self.athletes_by_index.append(a_ID)
@@ -40,19 +43,25 @@ class Save:
 	def add_race(self, race_url):
 		self.race_history.add(race_url)
 
-	def lose(self, won_id, lost_id):
+	def lose(self, won_id, lost_id, margin = .01):
 		self[won_id].win()
-		self[lost_id].lose()
+		outgoing_points = 1/(1 + 1/ceil(margin))
+		self[lost_id].lose(outgoing_points)
 		if won_id in self and lost_id in self.athlete_web[won_id]:
-			self.athlete_web[won_id][lost_id]['count'] += 1
+			self.athlete_web[won_id][lost_id]['count'] += outgoing_points
 		else:
-			self.athlete_web.add_edge(won_id, lost_id, count = 1)
-		count = self.athlete_web[won_id][lost_id]['count']
-		self.athlete_web.add_edge(won_id, lost_id, weight = count / self[lost_id].losses)
+			self.athlete_web.add_edge(won_id, lost_id, count = outgoing_points)
+
+	def update_weights(self):
+		for i in self.athletes_by_id:
+			for j in self.athletes_by_id:
+				if i in self.athlete_web and j in self.athlete_web[i]:
+					self.athlete_web[i][j]['weight'] = self.athlete_web[i][j]['count']/self[j].outgoing_points 
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, *athlete_ids, num_races_to_add = 20, filename = 'my_save.bin'):
 		importer.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
+		self.update_weights()
 		self.save(filename)
 
 	def update_rankings(self, filename = 'my_save.bin'):
@@ -89,9 +98,12 @@ class Save:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	s = Save('xc')
-	s.import_data(8693591, num_races_to_add = 1)
-	#b = load('high_school2.bin')
+	s = Save()
+	s.import_data(6804296, 8693591, 8692931, num_races_to_add = 200, filename = 'high_school.bin')
+	#s = Save.load('high_school.bin')
+	s.update_weights()
 	s.update_rankings()
 	s.print_rankings()
+	
+
 

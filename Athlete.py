@@ -3,15 +3,17 @@ class Athlete:
 	def __init__(self, id, name):
 		self.name = name #e.g Cooper Teare
 		self.id = id
-		self.rank_map = {} #e.g {'xc' : 10, '1600m' : 1, ...}
+		self.results = {} 
 		self.losses = 0
 		self.wins = 0
+		self.outgoing_points = 0
 
-	def add_rank(self, event, rank):
-		self.rank_map[event] = rank
+	def add_result(self, meet_name, time):
+		self.results[meet_name] = time
 
-	def lose(self):
+	def lose(self, outgoing_points):
 		self.losses += 1
+		self.outgoing_points += outgoing_points
 
 	def win(self):
 		self.wins += 1
