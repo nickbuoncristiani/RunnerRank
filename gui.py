@@ -11,6 +11,11 @@ def placeholder():
 
 def create_rankings_window():
     rankings_window = tk.Toplevel(root)
+    #Might change to grid below instead of pack
+    rankings_list = Text(rankings_window).pack()
+    rankings = "TEST STRING"
+    rankings_list.insert(END, rankings)
+    rankings_window.mainloop()
 
 #basic window setup
 root.title("Runner Rank")
