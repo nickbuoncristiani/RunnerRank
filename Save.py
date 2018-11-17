@@ -1,4 +1,4 @@
-import scrape_utils, Athlete, matrix_utils, pickle, importer, time
+import race_scraper, Athlete, matrix_utils, pickle, Save_Utils, time
 import numpy as np
 import networkx as nx
 from pygtrie import StringTrie
@@ -26,43 +26,30 @@ class Save:
 		with open(filename, 'wb') as file:
 			pickle.dump(self, file)
 
-	def update_athlete(self, a_ID, name, meet_name, time):
-		if a_ID in self:
-			self[a_ID].add_result(meet_name, time)
+	def update_athlete(self, athlete):
+		if athlete.id in self:
+			self[athlete.id].merge(athlete)
 			return 
-		new_athlete = Athlete.Athlete(a_ID, name)
-		new_athlete.add_result(meet_name, time)
-		self.athletes_by_id[a_ID] = new_athlete
-		self.athletes_by_name[name] = new_athlete
-		self.athletes_by_index.append(a_ID)
-		self.athlete_web.add_node(a_ID)
-
+		self.athletes_by_id[athlete.id] = athlete
+		self.athletes_by_name[athlete.name] = athlete
+		self.athletes_by_index.append(athlete.id)
+		self.athlete_web.add_node(athlete.id)
+ 
 	def consider_athlete(self, a_ID):
 		self.athletes_considered.add(a_ID)
 
 	def add_race(self, race_url):
 		self.race_history.add(race_url)
 
-	def lose(self, won_id, lost_id, margin = .01):
-		self[won_id].win()
-		outgoing_points = margin 
-		self[lost_id].lose(outgoing_points)
-		if lost_id in self.athlete_web[won_id]:
-			self.athlete_web[won_id][lost_id]['count'] += outgoing_points
-		else:
-			self.athlete_web.add_edge(won_id, lost_id, count = outgoing_points)
-
 	def update_weights(self, filename = 'my_save.bin'):
-		for i in self.athletes_by_id:
-			for j in self.athletes_by_id:
-				if i in self.athlete_web and j in self.athlete_web[i]:
-					self.athlete_web[i][j]['weight'] = self.athlete_web[i][j]['count']/self[j].outgoing_points
+		for athlete, persons_defeated in self.athlete_web.adj.items():
+			for person_defeated, connection in persons_defeated.items():
+				connection['weight'] = connection['count']/self[person_defeated].outgoing_points
 		self.save(filename) 
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, *athlete_ids, num_races_to_add = 20, filename = 'my_save.bin'):
-		importer.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
-		self.update_weights()
+		Save_Utils.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
 		self.save(filename)
 
 	def update_rankings(self, filename = 'my_save.bin'):
@@ -99,14 +86,9 @@ class Save:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	#s = Save()
-	#s.import_data(8693591, 6804296, num_races_to_add = 200, filename = 'high_school.bin')
-	s = Save.load('high_school.bin') 
-	t1 = time.clock()
-	s.update_weights()
-	t2 = time.clock()
-	print('took ' + str(t2 - t1) + ' seconds.')
-	s.update_rankings()
+	s = Save()
+	s.import_data(12421023, num_races_to_add = 3, filename = 'short_college.bin')
+	
  
 
 	

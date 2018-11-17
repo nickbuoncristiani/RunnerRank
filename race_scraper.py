@@ -1,7 +1,7 @@
 from urllib.request import urlopen, Request
-import re, Athlete, time, Meet
-import Save
+import re, Athlete, Meet
 import datetime as Date
+import time as t
 
 RESULT_PATTERN = re.compile(r'{"Result":[^}]+}')
 DATE_PATTERN = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
@@ -9,14 +9,14 @@ DATE_PATTERN = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
 #Uses raw re to extract race data from url.
 def process_race(race_url):
 	print('working on race: ' + race_url)
-	time.sleep(5)
+	t.sleep(5)
 	try:
 		req = Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})
 		with urlopen(req) as page:
 			race_info = str(page.read())
 	except:
 		print("Error handling race: " + race_url)
-		time.sleep(120)
+		t.sleep(120)
 		process_race(race_url, save, queue, new_athletes_to_add)
 
 	results = re.findall(RESULT_PATTERN, race_info)
@@ -27,15 +27,17 @@ def process_race(race_url):
 	meet_name = re.search('style="cursor:pointer;">[^<]+<', race_info).group()
 	meet_name = re.findall('>[^<]+', meet_name)[0][1:]
 
+	finished_results = {}
 	for result, place in zip(results, range(1, len(results) + 1)):
-		current_athlete, time = process_athlete_result(result, meet_name, save) 
+		current_athlete, time = process_athlete_result(result) 
 		if not(current_athlete): 
 			continue
-		finish_results[current_athlete] = (place, time)
+		finished_results[current_athlete] = (place, time)
 		
-	meet = Meet(meet_name, date, race_url, finished_results)
-	for athlete in meet.results:
-		athlete.add_race(meet)
+	new_meet = Meet.Meet(meet_name, date, race_url, finished_results)
+	for athlete in new_meet.results:
+		athlete.add_race(new_meet)
+	return new_meet
 
 #processes a single match found by regular expression, adding data to save
 def process_athlete_result(result_data):
@@ -47,9 +49,9 @@ def process_athlete_result(result_data):
 		a_id = result['AthleteID']
 		name = result['FirstName'] + ' ' + result['LastName']
 		assert time is not None and a_id is not None
-		athlete = Athlete(a_id, name)
+		athlete = Athlete.Athlete(a_id, name)
 	except:
-		return None
+		return None, None
 	return athlete, time
 
 #takes date string and returns appropriate datetime object

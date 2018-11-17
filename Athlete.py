@@ -3,20 +3,23 @@ class Athlete:
 	def __init__(self, id, name):
 		self.name = name #e.g Cooper Teare
 		self.id = id
-		self.results = {} 
 		self.losses = 0
-		self.wins = 0
 		self.outgoing_points = 0
-
-	def add_result(self, meet_name, time):
-		self.results[meet_name] = time
+		self.races = set()
 
 	def lose(self, outgoing_points):
 		self.losses += 1
 		self.outgoing_points += outgoing_points
 
-	def win(self):
-		self.wins += 1
+	def merge(self, other):
+		assert isinstance(other, Athlete)
+		assert self == other
+		self.losses += other.losses
+		self.outgoing_points += other.outgoing_points
+		self.races = self.races.union(other.races)
+
+	def add_race(self, race):
+		self.races.add(race)
 
 	def __eq__(self, other):
 		return isinstance(other, Athlete) and self.id == other.id
