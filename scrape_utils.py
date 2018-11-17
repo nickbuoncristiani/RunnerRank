@@ -26,10 +26,7 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 	race_date = date_pattern.findall(race_info)[0] #these two lines feel a little janky - i am going to clean up later
 	str_date = re.split(':', race_date)[1]
 
-	date_object = process_date(str_date)
-
-	name_pattern = re.compile(r'"OwnerID":.+:(".+")')
-	meet_name = re.findall(name_pattern, race_info)
+	date_object = process_date(str_date)s
 	"""
 
 	meet_name = re.search('style="cursor:pointer;">[^<]+<', race_info).group()
@@ -38,12 +35,12 @@ def process_race(race_url, save, queue = None, new_athletes_to_add = 2):
 	surpassers = []
 	added_to_queue = 0 
 	for result in results:
-		a_ID = process_athlete_result(result, meet_name, save)
+		a_ID = process_athlete_result(result, meet_name, save) 
+		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
+			continue
 		if added_to_queue < new_athletes_to_add and queue is not None:
 			queue.append(a_ID)
 			print('adding ' + save[a_ID].name + ' to queue.')
-		if not(a_ID): #just an edgecase for if a meet entry is nontraditional and athlete can't be verified.
-			continue
 		for surpasser in surpassers:
 			save.lose(surpasser, a_ID, margin = save[a_ID].results[meet_name] - save[surpasser].results[meet_name] + .01)
 		surpassers.append(a_ID)
@@ -56,21 +53,13 @@ def process_athlete_result(result_data, meet_name, save):
 	try:
 		result = eval(result_data)
 		time = result['SortValue']
-		a_ID = result['AthleteID']
+		a_id = result['AthleteID']
 		name = result['FirstName'] + ' ' + result['LastName']
-		assert(time is not None and a_id is not None)
-		save.update_athlete(a_ID, name, meet_name, time)
+		assert time is not None and a_id is not None
+		save.update_athlete(a_id, name, meet_name, time)
 	except:
 		return 0
-	return a_ID
-
-"""Converts a time in 'xx:xx' format to double format"""
-def getSeconds(time):
-    if ':' in time:
-        minutes = float('0' + time[0 : self.time.find(':')]) 
-        seconds = float(self.time[self.time.find(':') + 1:])
-        return minutes * 60 + seconds
-    return float(self.time)
+	return a_id
 
 #takes date string and returns appropriate datetime object
 def process_date(date_string):

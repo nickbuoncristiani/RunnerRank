@@ -45,18 +45,19 @@ class Save:
 
 	def lose(self, won_id, lost_id, margin = .01):
 		self[won_id].win()
-		outgoing_points = 1/(1 + 1/ceil(margin))
+		outgoing_points = margin 
 		self[lost_id].lose(outgoing_points)
-		if won_id in self and lost_id in self.athlete_web[won_id]:
+		if lost_id in self.athlete_web[won_id]:
 			self.athlete_web[won_id][lost_id]['count'] += outgoing_points
 		else:
 			self.athlete_web.add_edge(won_id, lost_id, count = outgoing_points)
 
-	def update_weights(self):
+	def update_weights(self, filename = 'my_save.bin'):
 		for i in self.athletes_by_id:
 			for j in self.athletes_by_id:
 				if i in self.athlete_web and j in self.athlete_web[i]:
-					self.athlete_web[i][j]['weight'] = self.athlete_web[i][j]['count']/self[j].outgoing_points 
+					self.athlete_web[i][j]['weight'] = self.athlete_web[i][j]['count']/self[j].outgoing_points
+		self.save(filename) 
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, *athlete_ids, num_races_to_add = 20, filename = 'my_save.bin'):
@@ -98,12 +99,17 @@ class Save:
 			print(place, self[athlete])
 
 if __name__ == "__main__":
-	s = Save()
-	s.import_data(6804296, 8693591, 8692931, num_races_to_add = 200, filename = 'high_school.bin')
-	#s = Save.load('high_school.bin')
+	#s = Save()
+	#s.import_data(8693591, 6804296, num_races_to_add = 200, filename = 'high_school.bin')
+	s = Save.load('high_school.bin') 
+	t1 = time.clock()
 	s.update_weights()
+	t2 = time.clock()
+	print('took ' + str(t2 - t1) + ' seconds.')
 	s.update_rankings()
-	s.print_rankings()
+ 
+
+	
 	
 
 

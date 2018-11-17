@@ -1,7 +1,7 @@
 import numpy as np
 
 #Pass in matrix and get list of rankings.
-def get_rankings(matrix, precision = 100):
+def get_rankings(matrix, precision = 1000):
 	current_scores = np.full(len(matrix), 1)
 	for p in range(precision):
 		current_scores = np.matmul(matrix, current_scores)
