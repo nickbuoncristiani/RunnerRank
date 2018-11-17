@@ -30,10 +30,14 @@ athlete_search_bar.insert(10, "Athlete Name")
 athlete_search_bar.grid(row=0, column=1)
 
 #new and load buttons
-tk.Button(root, text="New", command=placeholder).grid(row=1, column=0)
-tk.Button(root, text="Load", command=placeholder).grid(row=1, column=1)
+new_button = tk.Button(root, text="New", command=placeholder)
+new_button.grid(row=1, column=0)
+
+load_button = tk.Button(root, text="Load", command=placeholder)
+load_button.grid(row=1, column=1)
 
 #show rankings button
-tk.Button(root, text="Show Current Rankings", command=create_rankings_window).grid(row=2, column=0, columnspan=2)
+rankings_button = tk.Button(root, text="Show Current Rankings", command=create_rankings_window)
+rankings_button.grid(row=2, columnspan=2)
 
 root.mainloop()
