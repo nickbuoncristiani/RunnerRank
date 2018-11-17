@@ -5,16 +5,18 @@ saves = {}
 
 root = tk.Tk()
 
-#gui functions
+#GUI functions
 def placeholder():
     return None
 
 def create_rankings_window():
     rankings_window = tk.Toplevel(root)
     #Might change to grid below instead of pack
-    rankings_list = Text(rankings_window).grid(row=0, column=0)
-    rankings = "TEST STRING"
-    rankings_window.insert(END, rankings)
+    rankings_list = tk.Text(rankings_window)
+    rankings_list.grid(row=0, column=0)
+    #Will be replaced with actual rankings list
+    rankings = "RANKINGS HERE"
+    rankings_list.insert(tk.END, rankings)
     rankings_window.mainloop()
 
 #basic window setup
