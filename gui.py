@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter.filedialog import askopenfilename
 
 saves = {}
 
@@ -19,6 +20,12 @@ def create_rankings_window():
     rankings_list.insert(tk.END, rankings)
     rankings_window.mainloop()
 
+def load_save():
+    filename = askopenfilename()
+    #test
+    print(filename)
+    return filename
+
 #basic window setup
 root.title("Runner Rank")
 
@@ -33,7 +40,7 @@ athlete_search_bar.grid(row=0, column=1)
 new_button = tk.Button(root, text="New", command=placeholder)
 new_button.grid(row=1, column=0)
 
-load_button = tk.Button(root, text="Load", command=placeholder)
+load_button = tk.Button(root, text="Load", command=load_save)
 load_button.grid(row=1, column=1)
 
 #show rankings button
