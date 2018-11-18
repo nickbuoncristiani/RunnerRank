@@ -2,8 +2,8 @@ class Meet:
 	
 	def __init__(self, meet_name, date, meet_url, results):
 		self.meet_name = meet_name
-		self.meet_url = meet_url
 		self.date = date
+		self.meet_url = meet_url
 		self.results = results #{athlete object : (place, time)}
 		self.result_list = [athlete.id for athlete in results]
 

@@ -34,9 +34,10 @@ def process_race(race_url):
 			continue
 		finished_results[current_athlete] = (place, time)
 		
-	new_meet = Meet.Meet(meet_name, date, race_url, finished_results)
+	new_meet = Meet.Meet(meet_name, date, meet_url, finished_results)
 	for athlete in new_meet.results:
 		athlete.add_race(new_meet)
+		print('got here')
 	return new_meet
 
 #processes a single match found by regular expression, adding data to save

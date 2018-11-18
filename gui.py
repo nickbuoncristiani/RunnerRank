@@ -38,7 +38,7 @@ root.title("Runner Rank")
 #athlete search bar
 tk.Label(root, text="Search Athlete").grid(row=0, column=0)
 athlete_search_bar = tk.Entry(root)
-athlete_search_bar.insert(10, "Athlete Name"
+athlete_search_bar.insert(10, "Athlete Name")
 athlete_search_bar.grid(row=0, column=1)
 
 #new and load buttons

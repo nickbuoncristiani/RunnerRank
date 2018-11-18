@@ -72,6 +72,7 @@ def search_for_races(save, *starting_ids, num_races_to_add = 50, event = 'xc'):
 				save.race_history.add(meet)
 
 if __name__ == "__main__":
-	s = Save.Save('xc')
-	search_for_races(s, 12421025)
-	print(len(s.athletes_by_id))
+	#s = Save.Save('xc')
+	#search_for_races(s, 12421025)
+	#print(len(s.athletes_by_id))
+	s = Save.load('my_save.bin')

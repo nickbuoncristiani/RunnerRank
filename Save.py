@@ -87,7 +87,9 @@ class Save:
 
 if __name__ == "__main__":
 	s = Save()
-	s.import_data(12421023, num_races_to_add = 3, filename = 'short_college.bin')
+	s.import_data(12421023, num_races_to_add = 1, filename = 'short_college2.bin')
+	s = Save.load('short_college.bin')
+
 	
  
 
