@@ -1,4 +1,4 @@
-#Runner Rank: Experimental ranking procedure for NCAA and High School Cross-Country/Track and Field
+# Runner Rank: Experimental ranking procedure for NCAA and High School Cross-Country/Track and Field
 
 The goal of Runner Rank is to create, from some arbitrary collection of race results, a sorted list of all the runners ranked 
 from strongest to weakest. This process is made less intuitive by the fact that race courses vary dramatically in difficulty. For example, 
