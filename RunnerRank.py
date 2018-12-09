@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import race_scraper, Athlete, matrix_utils, pickle, os
 import Save_Utils
 import numpy as np

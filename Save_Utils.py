@@ -1,4 +1,4 @@
-import Save, race_scraper, time
+import Save, race_scraper, time, Meet
 from urllib.request import urlopen, Request
 from collections import deque
 from bs4 import BeautifulSoup as soup
@@ -56,23 +56,11 @@ def search_for_races(save, *starting_ids, num_races_to_add = 50, event = 'xc'):
 					race_urls.append(base_url_2 + td.find('a')['href'])
 
 		for race in race_urls:
-			if race in save.race_history:
+			if Meet.Meet('m', 'd', race, 'd') in save.race_history:
 				continue
 			else:
+				meet = race_scraper.process_race(save, race)
+				for i in range(ATHLETES_TO_ADD):
+					queue.append(meet.results[i][0])
+				save.add_race(meet)
 				races_added += 1
-				meet = race_scraper.process_race(race)
-				for athlete in meet.results:
-					save.update_athlete(athlete)
-					meet.results[save[athlete.id]] = meet.results.pop(athlete)
-				sorted_results = list(meet.results)
-				sorted_results.sort(key = lambda x : meet.results[x][0])
-				for i, athlete in zip(range(ATHLETES_TO_ADD), sorted_results):
-					print('adding ' + str(athlete) + ' to queue')
-					queue.append(athlete.id)
-				save.race_history.add(meet)
-
-if __name__ == "__main__":
-	#s = Save.Save('xc')
-	#search_for_races(s, 12421025)
-	#print(len(s.athletes_by_id))
-	s = Save.load('my_save.bin')
