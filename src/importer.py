@@ -1,4 +1,4 @@
-import Save, scrape_utils, time
+import Save, race_scraper, time
 from urllib.request import urlopen, Request
 from collections import deque
 from bs4 import BeautifulSoup as soup
