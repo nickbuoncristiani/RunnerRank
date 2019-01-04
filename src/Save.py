@@ -1,11 +1,15 @@
-import race_scraper, Athlete, matrix_utils, pickle, os
-import Save_Utils
+import race_scraper, Athlete, matrix_utils
+
+import pickle, os
 import numpy as np
 import networkx as nx
 from pygtrie import StringTrie
+
 import tkinter as tk
 from tkinter import ttk
 import tkinter.filedialog as fd
+
+SAVE_PATH = str(os.getcwd()) + '/saves'
 
 class Save:
 
@@ -19,7 +23,8 @@ class Save:
 		self.event = event
 		self.rankings = []
 
-	def load(filename = 'my_save.bin'):
+	@classmethod
+	def load(self, filename = 'my_save.bin'):
 		with open(filename, 'rb') as file:
 			s = pickle.load(file)
 			return s
@@ -55,13 +60,13 @@ class Save:
 						self.athlete_web.add_edge(surpasser_id, runner_id, count = 1)
 						surpassers.append(runner_id)
 
-		for athlete, persons_defeated in self.athlete_web.adj.items():
+		for persons_defeated in self.athlete_web.adj.items():
 			for person_defeated, connection in persons_defeated.items():
 				connection['weight'] = connection['count']/self[person_defeated].losses
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, num_races_to_add, *athlete_ids):
-		Save_Utils.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
+		race_scraper.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
 		self.update_graph()
 		self.update_rankings()
 
@@ -80,12 +85,12 @@ class Save:
 	def __getitem__(self, request):
 		if type(request) == int:
 			return self.athletes_by_id[request]
-			return self.athletes_by_name[request]
+		return self.athletes_by_name[request]
 
 	def __contains__(self, request):
 		if type(request) == int:
 			return request in self.athletes_by_id
-			return request in self.athletes_by_name
+		return request in self.athletes_by_name
 
 	def __len__(self):
 		return len(self.athletes_by_index)
@@ -97,60 +102,70 @@ class Save:
 		return ''.join([str(a[0] + 1) + '. ' + str(self.athletes_by_id[a[1]]) + '\n' for \
 			a in enumerate(self.rankings)])
 
+class RunnerRank(tk.Tk):
+ 
+	def __init__(self):
+		super().__init__()
+		if not os.path.isdir(str(os.getcwd()) + '/saves'):
+			os.mkdir(str(os.getcwd()) + '/saves')
 
-class RunnerRank(tk.Frame):
+		MainFrame(self).pack(expand=True)
 
-	def __init__(self, master = None):
-		super().__init__(master)
-		self.master = master
-		self.pack()
+		self.wm_title("Runner Rank")
+
+class MainFrame(tk.Frame):
+
+	def __init__(self, root):
+		super().__init__(root)
+		
 		self.rankings = "Please load a save!"
 		self.current = None
-		self.path = os.getcwd()
-		if not os.path.isdir(str(self.path) + '/saves'):
-			os.mkdir(str(self.path) + '/saves')
-		self.fill()
-
-	def fill(self):
-		self.master.title("Runner Rank")
-
-		tk.Label(self, text="Primary athletes:").grid(row=0, column=0)
+		self.root = root
+		tk.Label(self, text="Athletes:").grid(row=0, column=0, sticky='E')
+		tk.Label(self, text='Races to add:').grid(row=1, column=0, sticky='E')
+		
 		self.athlete_search_bar = tk.Entry(self)
-		self.athlete_search_bar.insert(10, "12421023, 12421047")
+		self.athlete_search_bar.insert(0, "12421023, 12421047")
 		self.athlete_search_bar.grid(row=0, column=1)
+		
+		self.num_races_bar = tk.Entry(self)
+		self.num_races_bar.insert(0, '20')
+		self.num_races_bar.grid(row=1, column=1)
 
-		self.new_button = tk.Button(self, text="New", command=self.new_save)
-		self.new_button.grid(row=1, column=0)
+		new_button = tk.Button(self, text="New", command=self.new_save)
+		new_button.grid(row=2, column=0)
 
-		self.load_button = tk.Button(self, text="Load", command=self.load_save)
-		self.load_button.grid(row=1, column=1)
+		load_button = tk.Button(self, text="Load", command=self.load_save)
+		load_button.grid(row=2, column=1)
 
-		self.rankings_button = tk.Button(self, text="Show Current Rankings", \
+		rankings_button = tk.Button(self, text="Show Current Rankings", \
 			command=self.create_rankings_window)
-		self.rankings_button.grid(row=2, columnspan=2)
-
-	def create_rankings_window(self):
-		self.rankings_window = tk.Toplevel(self.master)
-
-		self.rankings_list = tk.Text(self.rankings_window)
-		self.rankings_list.grid(row=0, column=0)
-
-		self.rankings_list.insert(tk.END, self.rankings)
-		self.rankings_window.mainloop()
+		rankings_button.grid(row=3, columnspan=2)
 
 	def load_save(self):
-		filename = fd.askopenfilename(initialdir = self.path + '/saves')
-		self.current = Save.load(str(filename))
-		self.rankings = str(self.current)
+		with fd.askopenfilename(initialdir = SAVE_PATH) as filename:
+			self.current = Save.load(str(filename))
+			self.rankings = str(self.current)
 
 	def new_save(self):
-		filename = fd.asksaveasfilename(initialdir = self.path + '/saves')
-		s = Save()
-		args = self.athlete_search_bar.get()
-		args = args.split(', ')
-		s.import_data(1, *args)
-		s.save(filename)
-		self.current, self.rankings = s, str(s) 
+		with fd.asksaveasfilename(initialdir = SAVE_PATH) as filename:
+			s = Save()
+			args = self.athlete_search_bar.get()
+			args = args.split(', ')
+			s.import_data(self.num_races_bar, *args)
+			s.save(filename)
+			self.current = s
+			self.rankings = str(s)
+
+	def create_rankings_window(self):
+		rankings_window = tk.Toplevel(self.root)
+
+		rankings_list = tk.Text(rankings_window, font=('Verdana', 10))
+		rankings_list.pack()
+
+		rankings_list.insert(tk.END, self.rankings)
+		rankings_window.mainloop()
+
 
 if __name__ == "__main__":
 	#s = Save()
@@ -158,8 +173,8 @@ if __name__ == "__main__":
 	#s.save('short_college2.bin')
 	#s = Save.load('short_college2.bin')
 	#print(s)
-	root = tk.Tk()
-	app = RunnerRank(root)
+	app = RunnerRank()
+	print(MainFrame(app).grid_size())
 	app.mainloop()
 
 
