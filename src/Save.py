@@ -27,7 +27,7 @@ class Save:
 	def load(self, filename = 'my_save.bin'):
 		with open(filename, 'rb') as file:
 			s = pickle.load(file)
-			return s
+		return s
 
 	def save(self, filename = 'my_save.bin'):
 		with open(filename, 'wb') as file:
@@ -143,19 +143,20 @@ class MainFrame(tk.Frame):
 		rankings_button.grid(row=3, columnspan=2)
 
 	def load_save(self):
-		with fd.askopenfilename(initialdir = SAVE_PATH) as filename:
-			self.current = Save.load(str(filename))
-			self.rankings = str(self.current)
+		filename = fd.askopenfilename(initialdir = SAVE_PATH)
+		self.current = Save.load(str(filename))
+		self.rankings = str(self.current)
 
 	def new_save(self):
-		with fd.asksaveasfilename(initialdir = SAVE_PATH) as filename:
-			s = Save()
-			args = self.athlete_search_bar.get()
-			args = args.split(', ')
-			s.import_data(self.num_races_bar, *args)
-			s.save(filename)
-			self.current = s
-			self.rankings = str(s)
+		filename = fd.asksaveasfilename(initialdir = SAVE_PATH) 
+		s = Save()
+		args = self.athlete_search_bar.get()
+		args = args.split(', ')
+		s.import_data(int(self.num_races_bar.get()), *args)
+		s.save(filename)
+		self.current = s
+		self.rankings = str(s)
+		self.announcement('Done collecting data!')
 
 	def create_rankings_window(self):
 		rankings_window = tk.Toplevel(self.root)
@@ -166,15 +167,17 @@ class MainFrame(tk.Frame):
 		rankings_list.insert(tk.END, self.rankings)
 		rankings_window.mainloop()
 
+	def announcement(self, msg):
+		window = tk.Tk()
+		window.wm_title('Announcement')
+		label = tk.Label(window, text=msg)
+		button = ttk.Button(window, text = 'OK', command=lambda: window.destroy())
+		label.pack()
+		button.pack()
+
 
 if __name__ == "__main__":
-	#s = Save()
-	#s.import_data(10, 12421023)
-	#s.save('short_college2.bin')
-	#s = Save.load('short_college2.bin')
-	#print(s)
 	app = RunnerRank()
-	print(MainFrame(app).grid_size())
 	app.mainloop()
 
 
