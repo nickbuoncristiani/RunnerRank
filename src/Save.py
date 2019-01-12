@@ -1,4 +1,4 @@
-import race_scraper, Athlete, matrix_utils
+import race_scraper, Athlete
 
 import pickle, os
 import numpy as np
@@ -13,14 +13,13 @@ SAVE_PATH = str(os.getcwd()) + '/saves'
 
 class Save:
 
-	def __init__(self, event = 'xc'):
+	def __init__(self):
 		self.athlete_web = nx.DiGraph() 
 		self.athletes_by_name = StringTrie() 
 		self.athletes_by_id = {} 
 		self.athletes_by_index = [] 
 		self.race_history = set() 
 		self.athletes_considered = set() 
-		self.event = event
 		self.rankings = []
 
 	@classmethod
@@ -60,19 +59,19 @@ class Save:
 						self.athlete_web.add_edge(surpasser_id, runner_id, count = 1)
 						surpassers.append(runner_id)
 
-		for persons_defeated in self.athlete_web.adj.items():
+		for person, persons_defeated in self.athlete_web.adj.items():
 			for person_defeated, connection in persons_defeated.items():
 				connection['weight'] = connection['count']/self[person_defeated].losses
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, num_races_to_add, *athlete_ids):
-		race_scraper.search_for_races(self, *athlete_ids, num_races_to_add = num_races_to_add, event = self.event)
+		race_scraper.search_for_races(self, num_races_to_add, *athlete_ids)
 		self.update_graph()
 		self.update_rankings()
 
 	def update_rankings(self):
 		system = nx.to_numpy_array(self.athlete_web)
-		rankings_by_index = matrix_utils.get_rankings(system)
+		rankings_by_index = self.get_rankings(system)
 		score_pairs = [(self.athlete_at_index(pair[0]), pair[1]) for pair in enumerate(rankings_by_index)] 
 		score_pairs.sort(key = lambda x: -1 * x[1])
 		self.rankings = list(map(lambda x: x[0], score_pairs))
@@ -80,6 +79,12 @@ class Save:
 	#We also assign an index to individual athletes so we can reclaim them from a vector/matrix.
 	def athlete_at_index(self, index):
 		return self.athletes_by_index[index]
+
+	def get_rankings(self, matrix, precision = 100):
+		current_scores = np.full(len(matrix), 1)
+		for _ in range(precision):
+			current_scores = np.matmul(matrix, current_scores)
+		return current_scores
 
 	#can subscript Save object using either athlete or athlete id for the same result.
 	def __getitem__(self, request):
@@ -160,15 +165,22 @@ class MainFrame(tk.Frame):
 
 	def create_rankings_window(self):
 		rankings_window = tk.Toplevel(self.root)
+		
+		scrollbar = ttk.Scrollbar(rankings_window)
+		scrollbar.pack(side='right', fill='y')
 
-		rankings_list = tk.Text(rankings_window, font=('Verdana', 10))
-		rankings_list.pack()
-
+		rankings_list = tk.Text(rankings_window, font=('Verdana', 10), yscrollcommand=scrollbar.set)
 		rankings_list.insert(tk.END, self.rankings)
+		rankings_list.pack()
+ 
+		scrollbar.config(command=rankings_list.yview)
+		
 		rankings_window.mainloop()
 
 	def announcement(self, msg):
 		window = tk.Tk()
+		window.resizable(width=False, height=False)
+		window.minsize(width=205, height=50)
 		window.wm_title('Announcement')
 		label = tk.Label(window, text=msg)
 		button = ttk.Button(window, text = 'OK', command=lambda: window.destroy())
@@ -179,6 +191,7 @@ class MainFrame(tk.Frame):
 if __name__ == "__main__":
 	app = RunnerRank()
 	app.mainloop()
+	
 
 
 

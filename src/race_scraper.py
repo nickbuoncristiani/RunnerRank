@@ -11,7 +11,7 @@ DATE_PATTERN = re.compile(r'"MeetDate":\"\d{4}.\d{2}.\d{2}')
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
 We need to upper bound the number of races that can be added to our system else we will run forever!"""
-def search_for_races(save, *starting_ids, num_races_to_add = 50):
+def search_for_races(save, num_races_to_add, *starting_ids):
 	BASE_URL ='https://www.athletic.net/CrossCountry/Athlete.aspx?AID='
 	ATHLETES_TO_ADD = 2
 	
@@ -110,8 +110,4 @@ def process_date(date_string):
 	date_string[2] = date_string[2][:2]
 	year, month, day = list(map(int, date_string))
 	return Date.datetime(year, month, day)
-
-if __name__ == "__main__":
-	s = Save.Save()
-	search_for_races(s, 12421023, num_races_to_add=1)
 	
