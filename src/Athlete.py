@@ -2,7 +2,7 @@ class Athlete:
 
 	id = 0
 	def __init__(self, id, name):
-		self.name = name #e.g Cooper Teare
+		self.name = name 
 		self.id = id
 		self.losses = 0
 		self.races = set()
