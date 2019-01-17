@@ -1,4 +1,4 @@
-import race_scraper, Athlete, time
+import race_scraper, Athlete, time, csv
 
 import pickle, os
 import numpy as np
@@ -46,11 +46,18 @@ class Save:
 	def consider_athlete(self, a_ID):
 		self.athletes_considered.add(a_ID)
 
-	def add_race(self, race_url):
-		self.race_history.add(race_url)
+	def add_race(self, race):
+		self.race_history.add(race)
 
 	def get_prefix_matches(self, name, count):
-		return list(map(lambda athlete: athlete.name, self.athletes_by_name.values(prefix=name)[:count]))
+		if self.athletes_by_name.has_node(name):
+			return tuple(map(lambda athlete: athlete.name + ': ' + str(athlete.id), \
+				self.athletes_by_name.values(prefix=name)[:count]))
+		else:
+			return ()
+
+	def get_ranking(self, id):
+		return self.rankings.index(id) + 1
 
 	def update_graph(self):
 		for race in self.race_history:
@@ -62,17 +69,28 @@ class Save:
 						self.athlete_web[surpasser_id][runner_id]['count'] += 1
 					else:
 						self.athlete_web.add_edge(surpasser_id, runner_id, count = 1)
-					surpassers.append(runner_id)
-
+				surpassers.append(runner_id)
+					
 		for persons_defeated in map(lambda item: item[1], self.athlete_web.adj.items()):
 			for person_defeated, connection in persons_defeated.items():
 				connection['weight'] = connection['count']/self[person_defeated].losses
 
 	#takes athletes as starting points and dives into athletic.net.
-	def import_data(self, num_races_to_add, athlete_id, progress_frame=None):
+	def import_data(self, num_races_to_add, athlete_id, progress_frame=None, backup_csv=None):
 		race_scraper.search_for_races(self, num_races_to_add, athlete_id, progress_frame=progress_frame)
 		self.update_graph()
 		self.update_rankings()
+		
+		if backup_csv:
+			with open(backup_csv, 'r') as file:
+				reader = csv.reader(file)
+				athletes = set(map(tuple, reader))
+			with open(backup_csv, 'a') as file:
+				writer = csv.writer(file, delimiter=',')
+				for athlete in self.athletes_by_id.values():
+					if (athlete.name, athlete.id) not in athletes:
+						writer.writerow([athlete.name, athlete.id])
+					
 
 	def update_rankings(self):
 		system = nx.to_numpy_array(self.athlete_web)
@@ -112,16 +130,23 @@ class Save:
 		return ''.join([str(a[0] + 1) + '. ' + str(self.athletes_by_id[a[1]]) + '\n' for \
 			a in enumerate(self.rankings)])
 
-CURRENT_SAVE = None
+CURRENT_SAVE = Save()
 DROPDOWN_NUM = 5
 RANKINGS = 'Please load a save or create a new one.'
+ID_ARCHIVE = CharTrie()
 
 class RunnerRank(tk.Tk):
  
 	def __init__(self):
 		super().__init__()
+		
 		if not os.path.isdir(str(os.getcwd()) + '/saves'):
 			os.mkdir(str(os.getcwd()) + '/saves')
+
+		with open(str(os.getcwd()) + '/namesIDs.csv', 'r') as backup_csv:
+			global ID_ARCHIVE
+			reader = csv.reader(backup_csv)
+			ID_ARCHIVE = CharTrie(map(lambda x: (x[0] + ': ' + x[1], x[1]), reader))
 
 		self.pages = {}
 		for page in (StartPage, PageOne, GatherPage, ViewPage, LoadingFrame):
@@ -208,6 +233,9 @@ class GatherPage(tk.Frame):
 		self.parent = parent
 		tk.Label(self, text='Athlete:').grid(row=0, column=0, sticky='e')
 		self.search_bar = ttk.Combobox(self)
+		self.search_bar.bind('<Down>', func=lambda key: self.update_matches())
+		self.search_bar.bind('<Return>', func=lambda key: self.search_bar.event_generate('<Down>'))
+		self.search_bar.bind('<<ComboboxSelected>>', func=self.update_box)
 		self.search_bar.grid(row=0, column=1, pady=2, sticky='w')
 
 		tk.Label(self, text='Races to add:').grid(row=1, column=0, sticky='e')
@@ -233,7 +261,8 @@ class GatherPage(tk.Frame):
 		self.parent.set_page(LoadingFrame)
 		self.parent.update()
 
-		s.import_data(num_races, athlete, progress_frame=loading)
+		s.import_data(num_races, athlete, progress_frame=loading, backup_csv= \
+			os.getcwd() + '/namesIDs.csv')
 		s.save(filename)
 
 		RANKINGS = str(s)
@@ -241,7 +270,16 @@ class GatherPage(tk.Frame):
 
 		self.parent.announcement(ViewPage, 'Done Collecting Data.')
 		self.parent.set_page(ViewPage)
-		
+		loading.update_progress(0) 
+
+	def update_matches(self):
+		if ID_ARCHIVE.has_node(self.search_bar.get()):
+			self.search_bar['values'] = ID_ARCHIVE.keys(prefix=self.search_bar.get())[:DROPDOWN_NUM]
+
+	def update_box(self, event):
+		search_value = self.search_bar.get()
+		self.search_bar.delete(0, tk.END)
+		self.search_bar.insert(0, search_value[search_value.index(':') + 2:]) #extracting id component
 
 class LoadingFrame(tk.Frame):
 	
@@ -264,13 +302,16 @@ class ViewPage(tk.Frame):
 	def __init__(self, parent):
 		tk.Frame.__init__(self, parent)
 		self.parent = parent
-		tk.Label(self, text='Search:').grid(row=0, column=0, sticky='e')
+		tk.Label(self, text='Search for athletes:').grid(row=0, column=0, sticky='e')
 		self.search_bar = ttk.Combobox(self)
+		self.search_bar.bind('<Key>', func=lambda key: self.update_matches())
+		self.search_bar.bind('<Return>', func=lambda key: self.search_bar.event_generate('<Down>'))
+		self.search_bar.bind('<<ComboboxSelected>>', func=lambda key: self.display_athlete())
 		self.search_bar.grid(row=0, column=1)
 		self.view_button = ttk.Button(self, text='View All Rankings', command=self.view_rankings)
 		self.view_button.grid(row=1, column=0, sticky='e')
 		back_button = ttk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
-		back_button.grid(row=2, column=0, sticky='e')
+		back_button.grid(row=2, column=0)
 
 	def view_rankings(self):
 		rankings_window = tk.Toplevel(self.parent)
@@ -278,7 +319,7 @@ class ViewPage(tk.Frame):
 		scrollbar = ttk.Scrollbar(rankings_window)
 		scrollbar.pack(side='right', fill='y')
 
-		rankings_list = tk.Text(rankings_window, font=('Verdana', 10), yscrollcommand=scrollbar.set)
+		rankings_list = tk.Text(rankings_window, font=('Verdana', 12), yscrollcommand=scrollbar.set)
 		rankings_list.insert(tk.END, RANKINGS)
 		rankings_list.pack()
 		rankings_list.config(state='disabled')
@@ -287,11 +328,31 @@ class ViewPage(tk.Frame):
 		
 		rankings_window.mainloop()
 
-def update_matches(self):
-	if CURRENT_SAVE:
-		self.athlete_search_bar['values'] = \
-			CURRENT_SAVE.get_prefix_matches(self.athlete_search_bar.get(), DROPDOWN_NUM)
+	def update_matches(self):
+		if CURRENT_SAVE:
+			self.search_bar['values'] = \
+				CURRENT_SAVE.get_prefix_matches(self.search_bar.get(), DROPDOWN_NUM)
+
+	def display_athlete(self):
+		search_value = self.search_bar.get()
+		athlete = CURRENT_SAVE[int(search_value[search_value.index(':') + 2:])]
+		AthletePage(self.parent, athlete)
 	
+class AthletePage(tk.Toplevel):
+
+	def __init__(self, parent, athlete):
+		tk.Toplevel.__init__(self, parent)
+		tk.Label(self, text = 'Name: ' + athlete.name + ' \n').pack(side='top')
+		tk.Label(self, text = 'School: ' + athlete.school + ' \n').pack(side='top')
+		tk.Label(self, text='Rank: ' + str(CURRENT_SAVE.get_ranking(athlete.id)) + '/' + str(len(CURRENT_SAVE)) + 2*' \n') \
+			.pack(side='top')
+		tk.Label(self, text='Participated in: \n' + self.display_meets(athlete.races)).pack(side='top')
+
+		ttk.Button(self, text='Exit', command=lambda:self.destroy()).pack(side='top', pady=3)
+		
+	def display_meets(self, meets):
+		return ''.join([str(meet[0] + 1) + '. ' + meet[1][0] + ' (' + meet[1][1] + ', ' + \
+			str(meet[1][2]) + ') ' + ' \n' for meet in enumerate(meets)])
 
 if __name__ == "__main__":
 	app = RunnerRank()

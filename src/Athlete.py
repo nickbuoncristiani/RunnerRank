@@ -1,8 +1,9 @@
 class Athlete:
 
 	id = 0
-	def __init__(self, id, name):
-		self.name = name 
+	def __init__(self, id, name, school):
+		self.name = name
+		self.school = school if school else 'Unattached'
 		self.id = id
 		self.losses = 0
 		self.races = set()
@@ -15,6 +16,7 @@ class Athlete:
 		assert self == other
 		self.losses += other.losses
 		self.races = self.races.union(other.races)
+		self.school = other.school if other.school is not 'Unattached' else self.school
 
 	def add_race(self, race):
 		self.races.add(race)
