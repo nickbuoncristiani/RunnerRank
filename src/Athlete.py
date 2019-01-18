@@ -3,7 +3,7 @@ class Athlete:
 	id = 0
 	def __init__(self, id, name, school):
 		self.name = name
-		self.school = school if school else 'Unattached'
+		self.school = school
 		self.id = id
 		self.losses = 0
 		self.races = set()

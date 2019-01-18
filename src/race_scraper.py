@@ -8,22 +8,21 @@ import json, Save
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
 We need to upper bound the number of races that can be added to our system else we will run forever!"""
-def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None):
+def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None, focus_local=False):
 	BASE_URL ='https://www.athletic.net/CrossCountry/Athlete.aspx?AID='
 	ATHLETES_TO_ADD = 2
 	
-	id_queue = list(starting_ids)
+	id_stack = list(starting_ids)
 	races_added = 0
 	
-	while races_added < num_races_to_add and id_queue:
-		curr_id = id_queue.pop(0)
+	while races_added < num_races_to_add and id_stack:
+		curr_id = id_stack.pop(0) if focus_local else id_stack.pop()
 		if curr_id in save.athletes_considered:
 			continue
 		page_url = BASE_URL + str(curr_id)
 		save.consider_athlete(curr_id)
 		print('Working on athlete with id: ' + str(curr_id))
 		
-		t.sleep(1)
 		try:
 			req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
 			with urlopen(req) as page:
@@ -33,16 +32,24 @@ def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None)
 			print(e)
 			continue
 
-		recent_season = athlete_history.find('div', {'class' : 'card-block px-2 pt-2 pb-0 collapse in'})
-		events = recent_season.findAll('h5')
-		event_results = recent_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
+		head = athlete_history.find('div', {'class':'col-md-7 pull-md-5 col-xl-8 pull-xl-4 col-print-7 athleteResults'})
 		
-		events = ['xc' for event in events] 
+		seasons = head.children
+		recent_season = next(seasons)
+		
+		results = recent_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
+		recent_tag = next(recent_season.find('h5').strings)
+		
+		unattached_season = next(seasons, None)
+		unattached_tag = next(unattached_season.find('h5').strings) if unattached_season else ''
+
+		if recent_tag == unattached_tag: 
+			results.extend(unattached_season)
+		
 		base_url_2 = 'https://www.athletic.net/CrossCountry/'
 		
-		full_results = event_results
 		race_urls = []
-		for result in full_results:
+		for result in results:
 			trs = result.findAll('tr')
 			for tr in trs:
 				td = tr.findAll('td')[3]
@@ -58,8 +65,12 @@ def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None)
 					save.add_race(Meet.Meet('Invalid', '-', race, []))
 					continue
 				save.add_race(meet)
-				for i in range(ATHLETES_TO_ADD):
-					id_queue.append(meet.results[i][0])
+				if focus_local:
+					for i in range(ATHLETES_TO_ADD):
+						id_stack.append(meet.results[i][0])
+				else:
+					for i in range(ATHLETES_TO_ADD):
+						id_stack.append(meet.results[ATHLETES_TO_ADD - i - 1][0])
 				races_added += 1
 				if progress_frame:
 					progress_frame.update_progress(races_added)
@@ -77,19 +88,19 @@ def process_race(save, race_url):
 		t.sleep(120)
 		process_race(save, race_url)
 
-	parse_data = re.search(r'.constant\("initialData"[^;]+\);', race_info).group()
-	parse_data = parse_data[25:len(parse_data)-2]
-	meet_data = parse_data
-	meet_data = re.sub(r'\"SetupState\".+,\"Settings\":null', r'"KMA":null', meet_data).replace('\\', '\\\\')
-	meet_data = re.sub(r'\"entries\":null.+', r'"GF":null}', meet_data)
-
-	meet_data = json.loads(meet_data)
 	
-	meet_name = meet_data['meet']['Name']
-	meet_date = process_date(meet_data['meet']['EndDate'])
+	meet_info = re.search(r'{\"meet\":.+,\"SetupState\"', race_info).group() + ':null}}'
+	meet_info = json.loads(meet_info)['meet']
+
+	results = re.search(r'\[{\"Result\":[^\]]+\]', race_info).group().replace('\\', '\\\\') \
+		.replace('\\\\\\\\"', '\\"')
+	results = json.loads(results)
+	
+	meet_name = meet_info['Name']
+	meet_date = process_date(meet_info['EndDate'])
 
 	finished_results = []
-	for result in meet_data['results']:
+	for result in results:
 		current_athlete, time = process_athlete_result(save, result, meet_name) 
 		if current_athlete: 
 			finished_results.append((current_athlete, time))
@@ -102,7 +113,8 @@ def process_athlete_result(save, result_data, meet):
 		time = result_data['Result']	
 		a_id = result_data['AthleteID']
 		name = result_data['FirstName'] + ' ' + result_data['LastName']
-		school = result_data['SchoolName']
+		name = name.replace('\\', '')
+		school = result_data['SchoolName'] if result_data['SchoolName'] else 'Unattached'
 		assert time is not None and a_id is not None
 		athlete = Athlete.Athlete(a_id, name, school)
 		athlete.add_race((meet, time, result_data['Place']))
@@ -119,4 +131,4 @@ def process_date(date_string):
 	return Date.datetime(year, month, day)
 	
 if __name__ == "__main__":
-	process_race(Save.Save(), 'https://www.athletic.net/CrossCountry/meet/146284/results/612612')
+	process_race(Save.Save(), 'https://www.athletic.net/CrossCountry/meet/156348/results/651804')

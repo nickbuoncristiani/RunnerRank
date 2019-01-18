@@ -76,8 +76,9 @@ class Save:
 				connection['weight'] = connection['count']/self[person_defeated].losses
 
 	#takes athletes as starting points and dives into athletic.net.
-	def import_data(self, num_races_to_add, athlete_id, progress_frame=None, backup_csv=None):
-		race_scraper.search_for_races(self, num_races_to_add, athlete_id, progress_frame=progress_frame)
+	def import_data(self, num_races_to_add, athlete_id, progress_frame=None, backup_csv=None, focus_local=False):
+		race_scraper.search_for_races(self, num_races_to_add, athlete_id, \
+			progress_frame=progress_frame, focus_local=focus_local)
 		self.update_graph()
 		self.update_rankings()
 		
@@ -88,7 +89,7 @@ class Save:
 			with open(backup_csv, 'a') as file:
 				writer = csv.writer(file, delimiter=',')
 				for athlete in self.athletes_by_id.values():
-					if (athlete.name, athlete.id) not in athletes:
+					if (athlete.name, str(athlete.id)) not in athletes:
 						writer.writerow([athlete.name, athlete.id])
 					
 
@@ -222,6 +223,8 @@ class PageOne(tk.Frame):
 	def load_save(self):
 		global CURRENT_SAVE, RANKINGS
 		filename = fd.askopenfilename(initialdir = SAVE_PATH)
+		if not(filename):
+			return
 		CURRENT_SAVE = Save.load(str(filename))
 		RANKINGS = str(CURRENT_SAVE)
 		self.parent.set_page(ViewPage)
@@ -238,6 +241,8 @@ class GatherPage(tk.Frame):
 		self.search_bar.bind('<<ComboboxSelected>>', func=self.update_box)
 		self.search_bar.grid(row=0, column=1, pady=2, sticky='w')
 
+		self.local = tk.BooleanVar(self, value=False)
+
 		tk.Label(self, text='Races to add:').grid(row=1, column=0, sticky='e')
 		self.num_races_bar = ttk.Entry(self)
 		self.num_races_bar.grid(row=1,column=1, sticky='w')
@@ -245,13 +250,21 @@ class GatherPage(tk.Frame):
 		self.generate_button = ttk.Button(self, text='Generate', command=self.new_save)
 		self.generate_button.grid(row=2, column=0, pady=2, sticky='e')
 
+		self.local_toggle = tk.Checkbutton(self, text='Focus local', variable=self.local, \
+			onvalue=True, offvalue=False)
+		self.local_toggle.grid(row=2, column=1)
+
 		back_button = ttk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
 		back_button.grid(row=3, column=0, pady=2, sticky='e')
 
 	def new_save(self):
 		global CURRENT_SAVE, RANKINGS
+		print(self.local.get())
 		
-		filename = fd.asksaveasfilename(initialdir=SAVE_PATH) 
+		filename = fd.asksaveasfilename(initialdir=SAVE_PATH)
+		if not(filename):
+			return
+
 		athlete = int(self.search_bar.get())
 		num_races = int(self.num_races_bar.get())
 		s = Save()
@@ -262,7 +275,7 @@ class GatherPage(tk.Frame):
 		self.parent.update()
 
 		s.import_data(num_races, athlete, progress_frame=loading, backup_csv= \
-			os.getcwd() + '/namesIDs.csv')
+			os.getcwd() + '/namesIDs.csv', focus_local=self.local.get())
 		s.save(filename)
 
 		RANKINGS = str(s)
