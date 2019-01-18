@@ -93,9 +93,9 @@ class Save:
 						writer.writerow([athlete.name, athlete.id])
 					
 
-	def update_rankings(self):
+	def update_rankings(self, precision=100):
 		system = nx.to_numpy_array(self.athlete_web)
-		rankings_by_index = self.get_rankings(system)
+		rankings_by_index = self.get_rankings(system, precision=precision)
 		score_pairs = [(self.athlete_at_index(pair[0]), pair[1]) for pair in enumerate(rankings_by_index)] 
 		score_pairs.sort(key=lambda x: -1 * x[1])
 		self.rankings = list(map(lambda x: x[0], score_pairs))
@@ -104,7 +104,7 @@ class Save:
 	def athlete_at_index(self, index):
 		return self.athletes_by_index[index]
 	
-	def get_rankings(self, matrix, precision = 100):
+	def get_rankings(self, matrix, precision=100):
 		current_scores = np.full(len(matrix), 1)
 		for _ in range(precision):
 			current_scores = np.matmul(matrix, current_scores)
@@ -135,6 +135,9 @@ CURRENT_SAVE = Save()
 DROPDOWN_NUM = 5
 RANKINGS = 'Please load a save or create a new one.'
 ID_ARCHIVE = CharTrie()
+FONT = ('helvetica', 11)
+frame_color = '#aaccaa'
+button_color = '#888888'
 
 class RunnerRank(tk.Tk):
  
@@ -160,6 +163,8 @@ class RunnerRank(tk.Tk):
 		self.wm_title("Runner Rank")
 		self.save = None
 
+		self.configure()
+
 	def set_page(self, page):
 		self.pages[GatherPage].search_bar.delete(0, tk.END)
 		self.pages[ViewPage].search_bar.delete(0, tk.END)
@@ -176,7 +181,7 @@ class RunnerRank(tk.Tk):
 		window.minsize(width=205, height=50)
 		window.wm_title('Announcement')
 		label = tk.Label(window, text=msg)
-		button = ttk.Button(window, text = 'OK', command=ok_button)
+		button = tk.Button(window, text = 'OK', command=ok_button)
 		label.pack()
 		button.pack()
 
@@ -184,6 +189,23 @@ class RunnerRank(tk.Tk):
 		state = state if state in ('disabled', 'normal') else 'normal'
 		for widget in self.pages[frame].grid_slaves():
 			widget.configure(state=state)
+
+	def configure(self):
+		for page in self.pages.values():
+			page.config(bg=frame_color)
+			for widget in page.grid_slaves():
+				self.adjust_widget(widget)
+			for widget in page.pack_slaves():
+				self.adjust_widget(widget)
+
+	def adjust_widget(self, widget):
+		widget_type = widget.__class__.__name__
+		if widget_type == tk.Button.__name__ or widget_type == tk.Checkbutton.__name__:
+			widget.config(bg=button_color, bd=0)
+		if widget_type == tk.Label.__name__:
+			widget.config(bg=frame_color, font=FONT)
+		if widget_type == tk.Frame.__name__:
+			widget.config(bg=frame_color)
 		
 
 class StartPage(tk.Frame):
@@ -191,17 +213,17 @@ class StartPage(tk.Frame):
 	def __init__(self, parent):
 		tk.Frame.__init__(self, parent)
 		self.parent = parent
-		begin_button = ttk.Button(self, text='Begin', command=lambda: parent.set_page(PageOne))
+		begin_button = tk.Button(self, text='Begin', command=lambda: parent.set_page(PageOne))
 		begin_button.pack(side='top', expand=True)
-		guide_button = ttk.Button(self, text='Guide', command=self.open_guide)
+		guide_button = tk.Button(self, text='Guide', command=self.open_guide)
 		guide_button.pack(side='top', expand=True)
 
 	def open_guide(self):
-		info_window = tk.Toplevel(self.parent)
+		info_window = tk.Toplevel(self.parent, bg=frame_color)
 		scrollbar = ttk.Scrollbar(info_window)
 		scrollbar.pack(side='right', fill='y')
 		with open(os.getcwd() + '/guide.txt', 'r') as info:
-			info_text = tk.Text(info_window, font=('Verdana', 12), yscrollcommand=scrollbar.set)
+			info_text = tk.Text(info_window, font=('Verdana', 12), bg=frame_color, yscrollcommand=scrollbar.set)
 			info_text.insert(tk.END, info.read())
 			info_text.pack()
 
@@ -214,17 +236,17 @@ class PageOne(tk.Frame):
 	def __init__(self, parent):
 		tk.Frame.__init__(self, parent)
 		self.parent = parent
-		tk.Label(self, text='Select Option:').pack(side='top')
-		new_button = ttk.Button(self, text='Make Rankings', command=lambda: parent.set_page(GatherPage))
-		new_button.pack(side='top')
-		load_button = ttk.Button(self, text='Load Rankings', command=self.load_save)
-		load_button.pack(side='top', expand=True)
-		back_button = ttk.Button(self, text='Back', command = lambda: parent.set_page(StartPage))
-		back_button.pack(side='top', expand=True)
+		tk.Label(self, font=FONT, text='Select Option:').pack(side='top')
+		new_button = tk.Button(self, text='Make Rankings', command=lambda: parent.set_page(GatherPage))
+		new_button.pack(side='top', pady=2)
+		load_button = tk.Button(self, text='Load Rankings', command=self.load_save)
+		load_button.pack(side='top', expand=True, pady=2)
+		back_button = tk.Button(self, text='Back', command = lambda: parent.set_page(StartPage))
+		back_button.pack(side='top', expand=True, pady=2)
 
 	def load_save(self):
 		global CURRENT_SAVE, RANKINGS
-		filename = fd.askopenfilename(initialdir = SAVE_PATH)
+		filename = fd.askopenfilename(initialdir=SAVE_PATH)
 		if not(filename):
 			return
 		CURRENT_SAVE = Save.load(str(filename))
@@ -249,14 +271,14 @@ class GatherPage(tk.Frame):
 		self.num_races_bar = ttk.Entry(self)
 		self.num_races_bar.grid(row=1,column=1, sticky='w')
 
-		self.generate_button = ttk.Button(self, text='Generate', command=self.new_save)
+		self.generate_button = tk.Button(self, text='Generate', command=self.new_save)
 		self.generate_button.grid(row=2, column=0, pady=2, sticky='e')
 
 		self.local_toggle = tk.Checkbutton(self, text='Focus local', variable=self.local, \
 			onvalue=True, offvalue=False)
 		self.local_toggle.grid(row=2, column=1)
 
-		back_button = ttk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
+		back_button = tk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
 		back_button.grid(row=3, column=0, pady=2, sticky='e')
 
 	def new_save(self):
@@ -316,24 +338,31 @@ class ViewPage(tk.Frame):
 	def __init__(self, parent):
 		tk.Frame.__init__(self, parent)
 		self.parent = parent
-		tk.Label(self, text='Search for athletes:').grid(row=0, column=0, sticky='e')
+		tk.Label(self, text='Search for athletes:').grid(row=0, column=0, sticky='w')
 		self.search_bar = ttk.Combobox(self)
 		self.search_bar.bind('<Key>', func=lambda key: self.update_matches())
 		self.search_bar.bind('<Return>', func=lambda key: self.search_bar.event_generate('<Down>'))
 		self.search_bar.bind('<<ComboboxSelected>>', func=lambda key: self.display_athlete())
-		self.search_bar.grid(row=0, column=1)
-		self.view_button = ttk.Button(self, text='View All Rankings', command=self.view_rankings)
-		self.view_button.grid(row=1, column=0, sticky='e')
-		back_button = ttk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
-		back_button.grid(row=2, column=0)
+		self.search_bar.grid(row=0, column=1, columnspan=2, sticky='w')
+		self.view_button = tk.Button(self, text='View All Rankings', command=self.view_rankings)
+		self.view_button.grid(row=1, column=0, columnspan=1, pady=7, sticky='w')
+		back_button = tk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
+		back_button.grid(row=3, column=0, columnspan=1, sticky='w')
+		
+		precision_frame = tk.Frame(self, borderwidth=1, relief='groove')
+		self.precision_entry = ttk.Entry(precision_frame, text='Precision', width=6)
+		self.precision_entry.grid(row=0, column=0, columnspan=1, sticky='w')
+		tk.Button(precision_frame, text='Adjust Precision', command=self.update_precision, \
+			bg=button_color, width=12).grid(row=0, column=1, columnspan=1, sticky='w')
+		precision_frame.grid(row=1, column=1, pady=7, padx=3)
 
 	def view_rankings(self):
-		rankings_window = tk.Toplevel(self.parent)
+		rankings_window = tk.Toplevel(self.parent, bg=frame_color)
 	
 		scrollbar = ttk.Scrollbar(rankings_window)
 		scrollbar.pack(side='right', fill='y')
 
-		rankings_list = tk.Text(rankings_window, font=('Verdana', 12), yscrollcommand=scrollbar.set)
+		rankings_list = tk.Text(rankings_window, font=FONT, yscrollcommand=scrollbar.set)
 		rankings_list.insert(tk.END, RANKINGS)
 		rankings_list.pack()
 		rankings_list.config(state='disabled')
@@ -351,18 +380,26 @@ class ViewPage(tk.Frame):
 		search_value = self.search_bar.get()
 		athlete = CURRENT_SAVE[int(search_value[search_value.index(':') + 2:])]
 		AthletePage(self.parent, athlete)
+
+	def update_precision(self):
+		try:
+			CURRENT_SAVE.update_rankings(precision=int(self.precision_entry.get()))
+		except Exception as e:
+			print(e)
 	
 class AthletePage(tk.Toplevel):
 
 	def __init__(self, parent, athlete):
-		tk.Toplevel.__init__(self, parent)
-		tk.Label(self, text = 'Name: ' + athlete.name + ' \n').pack(side='top')
-		tk.Label(self, text = 'School: ' + athlete.school + ' \n').pack(side='top')
-		tk.Label(self, text='Rank: ' + str(CURRENT_SAVE.get_ranking(athlete.id)) + '/' + str(len(CURRENT_SAVE)) + 2*' \n') \
-			.pack(side='top')
-		tk.Label(self, text='Participated in: \n' + self.display_meets(athlete.races)).pack(side='top')
+		tk.Toplevel.__init__(self, parent, bg=frame_color)
+		tk.Label(self, text = 'Name: ' + athlete.name + ' \n', bg=frame_color).pack(side='top')
+		tk.Label(self, text = 'School: ' + athlete.school + ' \n', bg=frame_color).pack(side='top')
+		tk.Label(self, text='Rank: ' + str(CURRENT_SAVE.get_ranking(athlete.id)) + '/' + str(len(CURRENT_SAVE)) + 2*' \n', \
+			bg=frame_color).pack(side='top')
+		tk.Label(self, text='Participated in: \n' + self.display_meets(athlete.races), \
+			bg=frame_color).pack(side='top')
 
-		ttk.Button(self, text='Exit', command=lambda:self.destroy()).pack(side='top', pady=3)
+		tk.Button(self, text='Exit', command=lambda:self.destroy(), bg=button_color, \
+			bd=0).pack(side='top', pady=3)
 		
 	def display_meets(self, meets):
 		return ''.join([str(meet[0] + 1) + '. ' + meet[1][0] + ' (' + meet[1][1] + ', ' + \
