@@ -1,1 +1,84 @@
-Runner Rank
+Overview:
+
+1. The goal of this application is to take an arbitrary runner as input and,
+after collecting the necessary information, decide how to rank the given
+athlete against his/her competitors. It generates a ranked list of all 
+athletes within this athletes sphere. The given athlete mostly serves as a 
+token for a region and the final results should not vary too much whether 
+the user inputs Bob or Bob's competitor/Bob's teammate. 
+
+2. The data is gathered from Athletic.net, so at the moment we are limited to 
+Collegiate/American HS runners. Also, the program only supports cross-country,
+this is primarily because cross-contry rankings are more difficult for a 
+human being to judge so it is a lot more fun to rank xc athletes. 
+
+3. The information gathered trends towards the more competetive meets. 
+I intend to provide alternative options soon. Overall, the rankings 
+for a given data set our fairly reasonable, but oftentimes the gathered
+data will consist largely of very strong runners. So if you find that 
+a runner is ranked 9000/10000, this runner might be ranked something 
+like 12000/100000 if you factor in everyone in the country. The key 
+take-away here is don't focus too much on the percentile!
+
+4. Rankings are generated using the RunnerRank algorithm. This
+algorithm doesn't care about course completion time, it only factors in 
+placement. This algorithm is still in the early stages of its development 
+so don't take these rankings too seriously (however they present themselves 
+quite nicely when compared with milesplits flo50 rankings so take them kind of 
+seriously). 
+
+5. The best applications for this program are high school cross country,
+followed by D1 NCAA cross country. 
+
+6. The program is only intended to collect data from the most recent season 
+at the moment, this will be fixed soon hopefully. 
+
+User Guide:
+
+1. After clicking 'begin', you will be prompted to select 'Make Rankings' or
+'Load Rankings'. 
+
+	a. 'Make Rankings' allows the user to search for an athlete to use as a
+	starting point. Again, this athlete is mostly a token for a region and 
+	does not receive any special treatment. 
+		i. The program already comes equipped with a cache to search 
+		for athletes i.e when you start typing an athletes name, a 
+		drop-down list will show all of the closest matches. Press 
+		Enter to display the drop down list. After selecting an athlete
+		from the list his/her 'athlete id' will be placed in the search bar. 
+		This is just the way it is for now. (Note: if an athlete does 
+		NOT show up in the dropdown menu this is because the athlete is 
+		not stored in the cache. You can get around this by searching 
+		the athlete on Athletic.net and copy and pasting their 
+		'athlete id' into the search bar. The athlete id can easily be 
+		found in the url. After doing this once, the cache will be updated 
+		and you won't have to do it a second time. The cache also updates
+		naturally as you use the program in the hopes that the user will
+		never run into this issue.)
+		
+		ii. The number of races to add option is fairly straightforward. 
+		The program will stop collecting data after *roughly this many 
+		races have been added to the system. A good number is around 10-40 
+		but you can try for more if you'd like.
+
+		iii. Focus Local: Sometimes when runner rank gathers data it can go
+		on tangents that end up distracting from the intended sample. This 
+		option will try to nudge the data collection towards the local
+		competition as opposed to the nationally ranked crowd. Eventually
+		the program will diverge here anyway. The only ways to combat this at 
+		the moment is to toggle this option and to collect fewer races
+		(~10 is best). In general the rankings are more accurate if we uncheck
+		this option. 
+
+		iv. After clicking generate, you will be prompted to save
+		the data in a file. Simply enter the name of your save, no file extensions 
+		are necessary. A good naming convention is athletename + 
+		number of races collected e.g. Bob20.
+
+	b. 'Load rankings': You can view old saves so you don't have to regather data
+	each time. Note that these saves can get relatively large. For example a 20 race
+	collection is around 10-15 mbs and 60 races is ~70mbs.
+	
+2. After you have loaded or created a save, the rest is very straightforward. You can click 
+'View all rankings' to see a list of all the rankings or you can search for an athlete to 
+view their ranking and their race history. 

@@ -3,7 +3,7 @@ import re, Athlete, Meet
 import datetime as Date
 import time as t
 from bs4 import BeautifulSoup as soup
-import json, Save
+import json, RunnerRank
 
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
@@ -131,4 +131,4 @@ def process_date(date_string):
 	return Date.datetime(year, month, day)
 	
 if __name__ == "__main__":
-	process_race(Save.Save(), 'https://www.athletic.net/CrossCountry/meet/156348/results/651804')
+	process_race(RunnerRank.Save(), 'https://www.athletic.net/CrossCountry/meet/156348/results/651804')
