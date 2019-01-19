@@ -8,15 +8,14 @@ import json, RunnerRank
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
 We need to upper bound the number of races that can be added to our system else we will run forever!"""
-def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None, focus_local=False):
+def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=False):
 	BASE_URL ='https://www.athletic.net/CrossCountry/Athlete.aspx?AID='
 	ATHLETES_TO_ADD = 2
 	
-	id_stack = list(starting_ids)
 	races_added = 0
 	
-	while races_added < num_races_to_add and id_stack:
-		curr_id = id_stack.pop(0) if focus_local else id_stack.pop()
+	while races_added < num_races_to_add and save.search_queue:
+		curr_id = save.search_queue.pop(0) if focus_local else save.search_queue.pop()
 		if curr_id in save.athletes_considered:
 			continue
 		page_url = BASE_URL + str(curr_id)
@@ -67,10 +66,10 @@ def search_for_races(save, num_races_to_add, *starting_ids, progress_frame=None,
 				save.add_race(meet)
 				if focus_local:
 					for i in range(ATHLETES_TO_ADD):
-						id_stack.append(meet.results[i][0])
+						save.search_queue.append(meet.results[i][0])
 				else:
 					for i in range(ATHLETES_TO_ADD):
-						id_stack.append(meet.results[ATHLETES_TO_ADD - i - 1][0])
+						save.search_queue.append(meet.results[ATHLETES_TO_ADD - i - 1][0])
 				races_added += 1
 				if progress_frame:
 					progress_frame.update_progress(races_added)

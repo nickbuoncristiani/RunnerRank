@@ -23,6 +23,7 @@ class Save:
 		self.race_history = set() 
 		self.athletes_considered = set() 
 		self.rankings = []
+		self.search_queue = []
 
 	@classmethod
 	def load(self, filename = 'my_save.bin'):
@@ -76,8 +77,11 @@ class Save:
 				connection['weight'] = connection['count']/self[person_defeated].losses
 
 	#takes athletes as starting points and dives into athletic.net.
-	def import_data(self, num_races_to_add, athlete_id, progress_frame=None, backup_csv=None, focus_local=False):
-		race_scraper.search_for_races(self, num_races_to_add, athlete_id, \
+	def import_data(self, num_races_to_add, athlete_id=None, progress_frame=None, backup_csv=None, \
+		focus_local=False):
+		if athlete_id:
+			self.search_queue.append(athlete_id)
+		race_scraper.search_for_races(self, num_races_to_add, \
 			progress_frame=progress_frame, focus_local=focus_local)
 		self.update_graph()
 		self.update_rankings()
@@ -136,6 +140,7 @@ DROPDOWN_NUM = 5
 RANKINGS = 'Please load a save or create a new one.'
 ID_ARCHIVE = CharTrie()
 FONT = ('helvetica', 11)
+FILE = ''
 frame_color = '#aaccaa'
 button_color = '#888888'
 
@@ -168,7 +173,11 @@ class RunnerRank(tk.Tk):
 	def set_page(self, page):
 		self.pages[GatherPage].search_bar.delete(0, tk.END)
 		self.pages[ViewPage].search_bar.delete(0, tk.END)
+		self.pages[ViewPage].quantity_entry.delete(0, tk.END)
+		self.pages[ViewPage].precision_entry.delete(0, tk.END)
+		self.pages[LoadingFrame].bar['value'] = 0
 		self.pages[page].tkraise()
+		self.update()
 
 	def announcement(self, frame, msg):
 		def ok_button():
@@ -188,7 +197,17 @@ class RunnerRank(tk.Tk):
 	def set_state(self, frame, state):
 		state = state if state in ('disabled', 'normal') else 'normal'
 		for widget in self.pages[frame].grid_slaves():
-			widget.configure(state=state)
+			if widget.__class__.__name__ == tk.Frame.__name__:
+				for w in widget.grid_slaves():
+					w.configure(state=state)
+			else:
+				widget.configure(state=state)
+		for widget in self.pages[frame].pack_slaves():
+			if widget.__class__.__name__ == tk.Frame.__name__:
+				for w in widget.grid_slaves():
+					w.configure(state=state)
+			else:
+				widget.configure(state=state)
 
 	def configure(self):
 		for page in self.pages.values():
@@ -245,12 +264,13 @@ class PageOne(tk.Frame):
 		back_button.pack(side='top', expand=True, pady=2)
 
 	def load_save(self):
-		global CURRENT_SAVE, RANKINGS
+		global CURRENT_SAVE, RANKINGS, FILE
 		filename = fd.askopenfilename(initialdir=SAVE_PATH)
 		if not(filename):
 			return
 		CURRENT_SAVE = Save.load(str(filename))
 		RANKINGS = str(CURRENT_SAVE)
+		FILE = filename
 		self.parent.set_page(ViewPage)
 
 class GatherPage(tk.Frame):
@@ -282,7 +302,7 @@ class GatherPage(tk.Frame):
 		back_button.grid(row=3, column=0, pady=2, sticky='e')
 
 	def new_save(self):
-		global CURRENT_SAVE, RANKINGS
+		global CURRENT_SAVE, RANKINGS, FILE
 		
 		filename = fd.asksaveasfilename(initialdir=SAVE_PATH)
 		if not(filename):
@@ -303,10 +323,10 @@ class GatherPage(tk.Frame):
 
 		RANKINGS = str(s)
 		CURRENT_SAVE = s
+		FILE = filename
 
 		self.parent.announcement(ViewPage, 'Done Collecting Data.')
 		self.parent.set_page(ViewPage)
-		loading.update_progress(0) 
 
 	def update_matches(self):
 		if ID_ARCHIVE.has_node(self.search_bar.get()):
@@ -340,21 +360,28 @@ class ViewPage(tk.Frame):
 		self.parent = parent
 		tk.Label(self, text='Search for athletes:').grid(row=0, column=0, sticky='w')
 		self.search_bar = ttk.Combobox(self)
-		self.search_bar.bind('<Key>', func=lambda key: self.update_matches())
+		self.search_bar.bind('<Down>', func=lambda key: self.update_matches(self.search_bar, self.search_bar.get()))
 		self.search_bar.bind('<Return>', func=lambda key: self.search_bar.event_generate('<Down>'))
 		self.search_bar.bind('<<ComboboxSelected>>', func=lambda key: self.display_athlete())
 		self.search_bar.grid(row=0, column=1, columnspan=2, sticky='w')
 		self.view_button = tk.Button(self, text='View All Rankings', command=self.view_rankings)
 		self.view_button.grid(row=1, column=0, columnspan=1, pady=7, sticky='w')
 		back_button = tk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
-		back_button.grid(row=3, column=0, columnspan=1, sticky='w')
+		back_button.grid(row=2, column=0, columnspan=1, sticky='w')
 		
 		precision_frame = tk.Frame(self, borderwidth=1, relief='groove')
-		self.precision_entry = ttk.Entry(precision_frame, text='Precision', width=6)
+		self.precision_entry = ttk.Entry(precision_frame, width=6)
 		self.precision_entry.grid(row=0, column=0, columnspan=1, sticky='w')
 		tk.Button(precision_frame, text='Adjust Precision', command=self.update_precision, \
 			bg=button_color, width=12).grid(row=0, column=1, columnspan=1, sticky='w')
 		precision_frame.grid(row=1, column=1, pady=7, padx=3)
+
+		add_frame = tk.Frame(self, borderwidth=1, relief='groove')
+		self.quantity_entry = ttk.Entry(add_frame, width=6)
+		self.quantity_entry.grid(row=0, column=0, columnspan=1, sticky='w')
+		tk.Button(add_frame, text='Add Races', command=self.add_races, \
+			bg=button_color, width=12).grid(row=0, column=1, columnspan=1, sticky='w')
+		add_frame.grid(row=2, column=1, pady=7, padx=3)
 
 	def view_rankings(self):
 		rankings_window = tk.Toplevel(self.parent, bg=frame_color)
@@ -371,10 +398,10 @@ class ViewPage(tk.Frame):
 		
 		rankings_window.mainloop()
 
-	def update_matches(self):
+	def update_matches(self, search, text):
 		if CURRENT_SAVE:
-			self.search_bar['values'] = \
-				CURRENT_SAVE.get_prefix_matches(self.search_bar.get(), DROPDOWN_NUM)
+			search['values'] = \
+				CURRENT_SAVE.get_prefix_matches(text, DROPDOWN_NUM)
 
 	def display_athlete(self):
 		search_value = self.search_bar.get()
@@ -382,10 +409,25 @@ class ViewPage(tk.Frame):
 		AthletePage(self.parent, athlete)
 
 	def update_precision(self):
+		global RANKINGS
 		try:
 			CURRENT_SAVE.update_rankings(precision=int(self.precision_entry.get()))
+			RANKINGS = str(CURRENT_SAVE)
+			CURRENT_SAVE.save(FILE)
+			self.update()
 		except Exception as e:
 			print(e)
+
+	def add_races(self):
+		global RANKINGS
+		num_races = int(self.quantity_entry.get())
+		loading = self.parent.pages[LoadingFrame]
+		loading.set_max(self.quantity_entry.get())
+		self.parent.set_page(LoadingFrame)
+		CURRENT_SAVE.import_data(num_races, backup_csv=str(os.getcwd()) + '/namesIDs.csv', progress_frame=loading)
+		CURRENT_SAVE.save(filename=FILE)
+		RANKINGS = str(CURRENT_SAVE)
+		self.parent.set_page(ViewPage)
 	
 class AthletePage(tk.Toplevel):
 
