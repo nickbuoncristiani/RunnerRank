@@ -5,12 +5,13 @@ import time as t
 from bs4 import BeautifulSoup as soup
 import json, RunnerRank
 
+BASE_URL ='https://www.athletic.net/CrossCountry/Athlete.aspx?AID='
+ATHLETES_TO_ADD = 2
+
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
 We need to upper bound the number of races that can be added to our system else we will run forever!"""
 def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=False):
-	BASE_URL ='https://www.athletic.net/CrossCountry/Athlete.aspx?AID='
-	ATHLETES_TO_ADD = 2
 	
 	races_added = 0
 	
@@ -77,6 +78,7 @@ def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=Fa
 #Uses raw re to extract race data from url.
 def process_race(save, race_url):
 	print('working on race: ' + race_url)
+	
 	try:
 		with urlopen(Request(race_url, headers={'User-Agent': 'Mozilla/5.0'})) as page:
 			race_info = str(page.read())
@@ -103,6 +105,8 @@ def process_race(save, race_url):
 		current_athlete, time = process_athlete_result(save, result, meet_name) 
 		if current_athlete: 
 			finished_results.append((current_athlete, time))
+	
+	assert len(finished_results) >= ATHLETES_TO_ADD
 
 	return Meet.Meet(meet_name, meet_date, race_url, finished_results)
 
