@@ -11,7 +11,7 @@ ATHLETES_TO_ADD = 2
 """Scrapes starting from athlete_ids, updates date_graph and adds all new athletes to athletes set
 xc is set to true by default as it is the most interesting application of our work.
 We need to upper bound the number of races that can be added to our system else we will run forever!"""
-def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=False):
+def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=False, season='recent'):
 	
 	races_added = 0
 	
@@ -35,15 +35,21 @@ def search_for_races(save, num_races_to_add, progress_frame=None, focus_local=Fa
 		head = athlete_history.find('div', {'class':'col-md-7 pull-md-5 col-xl-8 pull-xl-4 col-print-7 athleteResults'})
 		
 		seasons = head.children
-		recent_season = next(seasons)
 		
-		results = recent_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
-		recent_tag = next(recent_season.find('h5').strings)
+		if season == 'recent':
+			primary_season = next(seasons)
+		else:
+			primary_season = next(seasons)
+			while next(primary_season.find('h5').strings)[:4] != season:
+				primary_season = next(seasons)
+		
+		results = primary_season.findAll('table', {'class' : 'table table-sm table-responsive table-hover'})
+		season_tag = next(primary_season.find('h5').strings)
 		
 		unattached_season = next(seasons, None)
 		unattached_tag = next(unattached_season.find('h5').strings) if unattached_season else ''
 
-		if recent_tag == unattached_tag: 
+		if season_tag == unattached_tag: 
 			results.extend(unattached_season)
 		
 		base_url_2 = 'https://www.athletic.net/CrossCountry/'
@@ -134,4 +140,6 @@ def process_date(date_string):
 	return Date.datetime(year, month, day)
 	
 if __name__ == "__main__":
-	process_race(RunnerRank.Save(), 'https://www.athletic.net/CrossCountry/meet/156348/results/651804')
+	save = RunnerRank.Save(season='2016')
+	save.search_queue.append(5760931)
+	search_for_races(save, 10, season='2016')

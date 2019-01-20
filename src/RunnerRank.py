@@ -15,7 +15,7 @@ SAVE_PATH = str(os.getcwd()) + '/saves'
 
 class Save:
 
-	def __init__(self):
+	def __init__(self, season='recent'):
 		self.athlete_web = nx.DiGraph() 
 		self.athletes_by_name = CharTrie() 
 		self.athletes_by_id = {} 
@@ -24,6 +24,7 @@ class Save:
 		self.athletes_considered = set() 
 		self.rankings = []
 		self.search_queue = []
+		self.season = season
 
 	@classmethod
 	def load(self, filename = 'my_save.bin'):
@@ -78,11 +79,11 @@ class Save:
 
 	#takes athletes as starting points and dives into athletic.net.
 	def import_data(self, num_races_to_add, athlete_id=None, progress_frame=None, backup_csv=None, \
-		focus_local=False):
+		focus_local=False, season='recent'):
 		if athlete_id:
 			self.search_queue.append(athlete_id)
 		race_scraper.search_for_races(self, num_races_to_add, \
-			progress_frame=progress_frame, focus_local=focus_local)
+			progress_frame=progress_frame, focus_local=focus_local, season=season)
 		self.update_graph()
 		self.update_rankings()
 		
@@ -216,6 +217,7 @@ class RunnerRank(tk.Tk):
 				self.adjust_widget(widget)
 			for widget in page.pack_slaves():
 				self.adjust_widget(widget)
+		self.pages[GatherPage].generate_button.config(bg='gold')
 
 	def adjust_widget(self, widget):
 		widget_type = widget.__class__.__name__
@@ -243,6 +245,7 @@ class StartPage(tk.Frame):
 		scrollbar.pack(side='right', fill='y')
 		with open(os.getcwd() + '/guide.txt', 'r') as info:
 			info_text = tk.Text(info_window, font=('Verdana', 12), bg=frame_color, yscrollcommand=scrollbar.set)
+			info_text.config(state='disabled')
 			info_text.insert(tk.END, info.read())
 			info_text.pack()
 
@@ -283,23 +286,30 @@ class GatherPage(tk.Frame):
 		self.search_bar.bind('<Down>', func=lambda key: self.update_matches())
 		self.search_bar.bind('<Return>', func=lambda key: self.search_bar.event_generate('<Down>'))
 		self.search_bar.bind('<<ComboboxSelected>>', func=self.update_box)
-		self.search_bar.grid(row=0, column=1, pady=2, sticky='w')
+		self.search_bar.grid(row=0, column=1, pady=2, sticky='w', columnspan=1)
 
 		self.local = tk.BooleanVar(self, value=False)
 
 		tk.Label(self, text='Races to add:').grid(row=1, column=0, sticky='e')
 		self.num_races_bar = ttk.Entry(self)
-		self.num_races_bar.grid(row=1,column=1, sticky='w')
+		self.num_races_bar.grid(row=1,column=1, sticky='w', columnspan=1)
 
 		self.generate_button = tk.Button(self, text='Generate', command=self.new_save)
-		self.generate_button.grid(row=2, column=0, pady=2, sticky='e')
+		self.generate_button.grid(row=2, column=1, pady=2)
 
 		self.local_toggle = tk.Checkbutton(self, text='Focus local', variable=self.local, \
 			onvalue=True, offvalue=False)
-		self.local_toggle.grid(row=2, column=1)
+		self.local_toggle.grid(row=3, column=0)
 
-		back_button = tk.Button(self, text='Back', command = lambda: parent.set_page(PageOne))
-		back_button.grid(row=3, column=0, pady=2, sticky='e')
+		self.season_frame = tk.Frame(self)
+		tk.Label(self.season_frame, text='Season', bg=button_color).pack(side='right')
+		self.season_select = tk.Entry(self.season_frame, width=5, bd=0)
+		self.season_select.insert(tk.END, string='2018')
+		self.season_select.pack(side='right')
+		self.season_frame.grid(row=2, column=0)
+
+		back_button = tk.Button(self, text='Cancel', command = lambda: parent.set_page(PageOne))
+		back_button.grid(row=3, column=1, pady=2)
 
 	def new_save(self):
 		global CURRENT_SAVE, RANKINGS, FILE
@@ -317,9 +327,19 @@ class GatherPage(tk.Frame):
 		self.parent.set_page(LoadingFrame)
 		self.parent.update()
 
-		s.import_data(num_races, athlete, progress_frame=loading, backup_csv= \
-			os.getcwd() + '/namesIDs.csv', focus_local=self.local.get())
-		s.save(filename)
+		season = self.season_select.get() if self.season_select.get() \
+			in ('2018', '2017', '2016', '2015', '2014') else 'recent'
+
+		try:
+			s.import_data(num_races, athlete, progress_frame=loading, backup_csv= \
+				os.getcwd() + '/namesIDs.csv', focus_local=self.local.get(), \
+				season=season)
+			s.save(filename)
+		except:
+			message = 'Error collecting data. Make sure the entered information is valid.'
+			self.parent.announcement(ViewPage, message)
+			self.parent.set_page(ViewPage)
+			return
 
 		RANKINGS = str(s)
 		CURRENT_SAVE = s
@@ -389,7 +409,7 @@ class ViewPage(tk.Frame):
 		scrollbar = ttk.Scrollbar(rankings_window)
 		scrollbar.pack(side='right', fill='y')
 
-		rankings_list = tk.Text(rankings_window, font=FONT, yscrollcommand=scrollbar.set)
+		rankings_list = tk.Text(rankings_window, font=FONT, yscrollcommand=scrollbar.set, bg=frame_color)
 		rankings_list.insert(tk.END, RANKINGS)
 		rankings_list.pack()
 		rankings_list.config(state='disabled')
@@ -424,7 +444,8 @@ class ViewPage(tk.Frame):
 		loading = self.parent.pages[LoadingFrame]
 		loading.set_max(self.quantity_entry.get())
 		self.parent.set_page(LoadingFrame)
-		CURRENT_SAVE.import_data(num_races, backup_csv=str(os.getcwd()) + '/namesIDs.csv', progress_frame=loading)
+		CURRENT_SAVE.import_data(num_races, backup_csv=str(os.getcwd()) + '/namesIDs.csv', \
+			progress_frame=loading, season=CURRENT_SAVE.season)
 		CURRENT_SAVE.save(filename=FILE)
 		RANKINGS = str(CURRENT_SAVE)
 		self.parent.set_page(ViewPage)
